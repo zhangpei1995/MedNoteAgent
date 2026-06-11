@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: med-note-agent
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    filter: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-dynamic-parameter: true
+    enable-footer: false

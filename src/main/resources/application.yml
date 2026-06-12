@@ -25,3 +25,24 @@ knife4j:
     language: zh_cn
     enable-dynamic-parameter: true
     enable-footer: false
+
+mednote:
+  agent:
+    keyword:
+      max-keywords: 12
+      small-model:
+        provider: dashscope
+        model: qwen-turbo
+        temperature: 0.1
+        response-format: json_object
+
+    intent:
+      small-model:
+        provider: dashscope
+        model: qwen-turbo
+        temperature: 0.1
+        response-format: json_object
+        timeout-ms: 800
+
+    session:
+      max-records: 100

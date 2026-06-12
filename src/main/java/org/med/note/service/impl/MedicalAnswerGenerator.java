@@ -1,14 +1,15 @@
-package org.med.note.service;
+package org.med.note.service.impl;
 
 import org.med.note.client.QianwenClient;
 import org.med.note.domain.EvidenceChunk;
+import org.med.note.service.spi.AnswerGenerator;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class MedicalAnswerGenerator {
+public class MedicalAnswerGenerator implements AnswerGenerator {
 
     private final QianwenClient qianwenClient;
 
@@ -16,6 +17,7 @@ public class MedicalAnswerGenerator {
         this.qianwenClient = qianwenClient;
     }
 
+    @Override
     public String generate(String topic, String question, String riskLevel, List<EvidenceChunk> evidence) {
         String prompt = buildUserPrompt(topic, question, riskLevel, evidence);
         String systemPrompt = """

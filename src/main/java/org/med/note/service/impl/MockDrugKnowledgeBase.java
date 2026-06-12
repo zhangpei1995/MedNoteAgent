@@ -1,6 +1,7 @@
-package org.med.note.service;
+package org.med.note.service.impl;
 
 import org.med.note.domain.EvidenceChunk;
+import org.med.note.service.spi.EvidenceRetriever;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Service
-public class MockDrugKnowledgeBase {
+public class MockDrugKnowledgeBase implements EvidenceRetriever {
 
     private static final List<EvidenceChunk> MOCK_EVIDENCE = List.of(
             new EvidenceChunk(
@@ -63,7 +64,12 @@ public class MockDrugKnowledgeBase {
     );
 
     public List<EvidenceChunk> search(String topic, String query, int limit) {
-        String normalized = normalize(topic + " " + query);
+        return search(topic, query, List.of(), limit);
+    }
+
+    @Override
+    public List<EvidenceChunk> search(String topic, String query, List<String> queryKeywords, int limit) {
+        String normalized = normalize(topic + " " + query + " " + String.join(" ", queryKeywords == null ? List.<String>of() : queryKeywords));
         String explicitDrugName = resolveExplicitDrugName(normalized);
         return MOCK_EVIDENCE.stream()
                 .filter(chunk -> explicitDrugName == null || chunk.drugName().equals(explicitDrugName))
@@ -72,7 +78,7 @@ public class MockDrugKnowledgeBase {
                         chunk.drugName(),
                         chunk.section(),
                         chunk.content(),
-                        score(chunk, normalized)
+                        score(chunk, normalized, queryKeywords == null ? List.<String>of() : queryKeywords)
                 ))
                 .filter(chunk -> chunk.score() > 0)
                 .sorted(Comparator.comparingDouble(EvidenceChunk::score).reversed())
@@ -89,9 +95,9 @@ public class MockDrugKnowledgeBase {
                 .orElse(null);
     }
 
-    private double score(EvidenceChunk chunk, String query) {
+    private double score(EvidenceChunk chunk, String query, List<String> queryKeywords) {
         double score = 0;
-        String haystack = normalize(chunk.drugName() + " " + chunk.section() + " " + chunk.content());
+        String haystack = normalize(chunk.drugName() + " " + chunk.section() + " " + chunk.content() + " " + String.join(" ", knowledgeKeywords(chunk)));
 
         if (query.contains(normalize(chunk.drugName()))) {
             score += 3.0;
@@ -106,12 +112,31 @@ public class MockDrugKnowledgeBase {
             }
         }
 
+        for (String keyword : queryKeywords == null ? List.<String>of() : queryKeywords) {
+            if (!keyword.isBlank() && haystack.contains(normalize(keyword))) {
+                score += 0.8;
+            }
+        }
+
         for (String token : query.split("\\s+")) {
             if (!token.isBlank() && token.length() >= 2 && haystack.contains(token)) {
                 score += 0.2;
             }
         }
         return score;
+    }
+
+    private List<String> knowledgeKeywords(EvidenceChunk chunk) {
+        return switch (chunk.id()) {
+            case "mock-edt-indication" -> List.of("养阴润肺", "咽干", "干咳", "咽痛", "功能主治");
+            case "mock-edt-dosage" -> List.of("开水冲服", "一日2次", "儿童", "孕妇", "用法用量");
+            case "mock-edt-caution" -> List.of("忌烟酒", "忌辛辣", "生冷", "油腻", "及时就医", "注意事项");
+            case "mock-edt-adverse" -> List.of("胃部不适", "恶心", "停药", "不良反应");
+            case "mock-cmxf-indication" -> List.of("平肝熄风", "化痰通络", "风痰阻络", "功能主治");
+            case "mock-cmxf-caution" -> List.of("运动员", "孕妇", "儿童", "肝肾功能", "合并用药", "注意事项");
+            case "mock-cmxf-contraindication" -> List.of("过敏", "禁用", "慎用", "禁忌", "过敏体质");
+            default -> List.of();
+        };
     }
 
     private String normalize(String value) {

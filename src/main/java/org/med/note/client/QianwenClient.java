@@ -10,6 +10,8 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.protocol.Protocol;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,13 +20,10 @@ import java.util.List;
  * 阿里云百炼-千问通用客户端
  * 支持动态系统提示、用户提问、模型切换、统一异常捕获
  */
+@Component
 public class QianwenClient {
 
     // ==================== 全局配置项（统一维护，方便修改） ====================
-    /**
-     * API Key 建议生产环境放入环境变量/配置中心，不要硬编码
-     */
-    private static final String API_KEY = "sk-d280227b00c442d9bbbd2d054908bfad";
     /**
      * 接口地址
      */
@@ -32,7 +31,7 @@ public class QianwenClient {
     /**
      * 默认模型
      */
-    private static final String DEFAULT_MODEL = "qwen3.7-max";
+    private static final String DEFAULT_MODEL = "qwen-max";
     /**
      * 默认系统角色提示词
      */
@@ -43,6 +42,29 @@ public class QianwenClient {
 
     static {
         GENERATION_CLIENT = new Generation(Protocol.HTTP.getValue(), API_URL);
+    }
+
+    private final String apiKey;
+    private final String model;
+
+    public QianwenClient(
+            @Value("${mednote.llm.dashscope.api-key:${DASHSCOPE_API_KEY:}}") String apiKey,
+            @Value("${mednote.llm.dashscope.model:qwen-max}") String model
+    ) {
+        this.apiKey = blankToNull(apiKey);
+        this.model = blankToDefault(model, DEFAULT_MODEL);
+    }
+
+    public boolean isConfigured() {
+        return apiKey != null && !apiKey.isBlank();
+    }
+
+    public String chatWithConfiguredModel(String systemPrompt, String userContent)
+            throws ApiException, NoApiKeyException, InputRequiredException {
+        if (!isConfigured()) {
+            throw new NoApiKeyException();
+        }
+        return chat(systemPrompt, userContent, model, apiKey);
     }
 
     // ==================== 对外通用方法 ====================
@@ -80,6 +102,14 @@ public class QianwenClient {
      */
     public static String chat(String systemPrompt, String userContent, String model)
             throws ApiException, NoApiKeyException, InputRequiredException {
+        return chat(systemPrompt, userContent, model, resolveApiKeyFromEnvironment());
+    }
+
+    private static String chat(String systemPrompt, String userContent, String model, String apiKey)
+            throws ApiException, NoApiKeyException, InputRequiredException {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new NoApiKeyException();
+        }
         // 构建消息列表
         List<Message> messageList = new ArrayList<>();
         if (systemPrompt != null && !systemPrompt.isEmpty()) {
@@ -98,7 +128,7 @@ public class QianwenClient {
 
         // 构造请求参数
         GenerationParam param = GenerationParam.builder()
-                .apiKey(API_KEY)
+                .apiKey(apiKey)
                 .model(model)
                 .messages(messageList)
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
@@ -122,7 +152,7 @@ public class QianwenClient {
             throw new InputRequiredException("对话消息列表不能为空");
         }
         GenerationParam param = GenerationParam.builder()
-                .apiKey(API_KEY)
+                .apiKey(resolveApiKeyFromEnvironment())
                 .model(model)
                 .messages(messageList)
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
@@ -160,5 +190,17 @@ public class QianwenClient {
             System.err.println("调用千问接口异常：" + e.getMessage());
             System.err.println("错误文档参考：https://help.aliyun.com/model-studio/developer-reference/error-code");
         }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String blankToDefault(String value, String defaultValue) {
+        return value == null || value.isBlank() ? defaultValue : value.trim();
+    }
+
+    private static String resolveApiKeyFromEnvironment() {
+        return blankToNull(System.getenv("DASHSCOPE_API_KEY"));
     }
 }

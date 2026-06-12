@@ -67,6 +67,10 @@ public class MockDrugKnowledgeBase implements EvidenceRetriever {
         return search(topic, query, List.of(), limit);
     }
 
+    public List<EvidenceChunk> allEvidence() {
+        return MOCK_EVIDENCE;
+    }
+
     @Override
     public List<EvidenceChunk> search(String topic, String query, List<String> queryKeywords, int limit) {
         String normalized = normalize(topic + " " + query + " " + String.join(" ", queryKeywords == null ? List.<String>of() : queryKeywords));

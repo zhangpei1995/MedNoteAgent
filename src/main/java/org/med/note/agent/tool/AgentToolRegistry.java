@@ -59,7 +59,7 @@ public class AgentToolRegistry {
     public AgentToolDescriptor describe(AgentTool tool) {
         AgentToolDefinition definition = tool.getClass().getAnnotation(AgentToolDefinition.class);
         if (definition == null) {
-            return new AgentToolDescriptor(tool.getClass().getSimpleName(), "未声明描述", "extension", Integer.MAX_VALUE, false, List.of(), List.of());
+            return new AgentToolDescriptor(tool.getClass().getSimpleName(), "未声明描述", "extension", Integer.MAX_VALUE, false, List.of(), true, List.of(), List.of());
         }
         return new AgentToolDescriptor(
                 definition.name(),
@@ -67,6 +67,8 @@ public class AgentToolRegistry {
                 definition.phase(),
                 definition.order(),
                 definition.required(),
+                List.of(definition.dependsOn()),
+                definition.parallelizable(),
                 List.of(definition.keywordHints()),
                 List.of(definition.triggers())
         );

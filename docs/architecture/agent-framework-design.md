@@ -63,6 +63,44 @@ MedNoteAgent 后续将建设药物说明书知识库，面向用户问题给出�
 1. **知识入库链路**：说明书文件进入系统后，完成解析、清洗、结构化抽取、切片、向量化和索引。
 2. **问答推理链路**：用户提问进入 Agent 后，完成意图识别、检索、证据聚合、安全判断和回答生成。
 
+## 3.1 当前落地架构补充
+
+当前代码已落地三类基础能力：
+
+```text
+Agent 编排与审计：
+
+MedNoteAgent
+  -> AgentToolPlanner          # 动态选择可执行工具批次
+  -> AgentToolExecutor         # 并发执行同批工具并生成 ToolCallRecord
+  -> AgentContextMerger        # 合并 ToolResult 到 ToolContext
+  -> AgentStepFactory          # 生成 thought / tool / final 事件
+  -> AgentRunResponseFactory   # 转换为对外 AgentRunResponse
+  -> AgentRunStore             # 保存运行记录
+       -> SqliteAgentRunStore
+
+知识图谱存储：
+
+KnowledgeGraphReader
+KnowledgeGraphWriter
+  -> KnowledgeGraphStore
+       -> SqliteKnowledgeGraphStore
+       -> KnowledgeGraphBootstrap
+```
+
+说明：
+
+- `MedNoteAgent` 只保留请求规范化、循环编排、保存运行结果等高层逻辑。
+- 工具执行、上下文合并、响应构建和 step 事件构建已经拆成独立组件，避免 agent 类继续膨胀。
+- Agent 运行记录使用 SQLite 三表保存：`agent_runs`、`agent_steps`、`agent_tool_calls`。
+- 知识图谱使用 SQLite 两表保存：`knowledge_graph_nodes`、`knowledge_graph_edges`。
+- SQLite 当前用于本地 demo 和模拟 MySQL；后续迁移 MySQL 时保持 Reader/Writer/Store 接口不变。
+
+专题设计文档：
+
+- `docs/architecture/agent-concurrency-sqlite-design.md`
+- `docs/architecture/sqlite-knowledge-graph-design.md`
+
 ## 4. 推荐包结构
 
 ```text

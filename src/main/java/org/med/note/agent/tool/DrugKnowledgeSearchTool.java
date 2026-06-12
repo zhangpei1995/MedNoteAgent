@@ -14,6 +14,7 @@ import java.util.Map;
         phase = "retrieval",
         order = 30,
         required = true,
+        dependsOn = {"request_planning"},
         keywordHints = {"说明书检索", "证据召回", "药品知识库", "章节召回", "知识片段"},
         triggers = {"功能主治", "适应症", "用法", "用量", "注意", "禁忌", "不良反应", "证据", "检索", "GENERAL_QA", "DOSAGE_ADVICE", "CAUTION", "CONTRAINDICATION", "ADVERSE_REACTION", "SPECIAL_POPULATION"}
 )

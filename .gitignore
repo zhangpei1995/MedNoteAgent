@@ -1,4 +1,6 @@
 target/
+data/*.db
+data/*.db-*
 .agents/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

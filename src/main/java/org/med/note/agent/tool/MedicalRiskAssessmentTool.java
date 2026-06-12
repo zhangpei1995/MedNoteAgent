@@ -12,6 +12,7 @@ import java.util.Map;
         phase = "safety",
         order = 40,
         required = true,
+        dependsOn = {"request_planning"},
         keywordHints = {"风险评估", "禁忌判断", "特殊人群", "过敏风险", "安全策略"},
         triggers = {"风险", "禁忌", "过敏", "孕妇", "儿童", "老人", "肝肾", "合并", "注意", "不良反应", "CONTRAINDICATION", "SPECIAL_POPULATION", "CAUTION", "ADVERSE_REACTION"}
 )

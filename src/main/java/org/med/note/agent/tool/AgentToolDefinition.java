@@ -22,6 +22,16 @@ public @interface AgentToolDefinition {
     boolean required() default false;
 
     /**
+     * Tool names that must complete before this tool can be selected.
+     */
+    String[] dependsOn() default {};
+
+    /**
+     * Whether the tool can run concurrently with other ready tools against the same context snapshot.
+     */
+    boolean parallelizable() default true;
+
+    /**
      * 用于工具召回的小模型关键词提示；比 triggers 更偏向语义标签。
      */
     String[] keywordHints() default {};

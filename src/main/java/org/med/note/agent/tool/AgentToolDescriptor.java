@@ -8,6 +8,8 @@ public record AgentToolDescriptor(
         String phase,
         int order,
         boolean required,
+        List<String> dependsOn,
+        boolean parallelizable,
         List<String> keywordHints,
         List<String> triggers
 ) {

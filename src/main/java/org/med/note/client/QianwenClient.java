@@ -10,6 +10,7 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.protocol.Protocol;
+import org.med.note.config.DotenvConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -48,10 +49,9 @@ public class QianwenClient {
     private final String model;
 
     public QianwenClient(
-            @Value("${mednote.llm.dashscope.api-key:${DASHSCOPE_API_KEY:}}") String apiKey,
             @Value("${mednote.llm.dashscope.model:qwen-max}") String model
     ) {
-        this.apiKey = blankToNull(apiKey);
+        this.apiKey = blankToNull(DotenvConfig.getQwenApiKey());
         this.model = blankToDefault(model, DEFAULT_MODEL);
     }
 

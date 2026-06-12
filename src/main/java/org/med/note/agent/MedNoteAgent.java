@@ -1,41 +1,52 @@
 package org.med.note.agent;
 
+import org.med.note.agent.runtime.AgentSession;
+import org.med.note.agent.runtime.AgentRunRecord;
+import org.med.note.agent.runtime.AgentRunStore;
+import org.med.note.agent.runtime.AgentToolPlanner;
+import org.med.note.agent.runtime.ToolCallRecord;
+import org.med.note.agent.runtime.ToolSelectionDecision;
+import org.med.note.agent.tool.AgentToolDescriptor;
+import org.med.note.agent.tool.AgentToolRegistry;
+import org.med.note.agent.tool.ToolContext;
+import org.med.note.agent.tool.ToolResult;
 import org.med.note.domain.EvidenceChunk;
 import org.med.note.dto.AgentRunRequest;
 import org.med.note.dto.AgentRunResponse;
 import org.med.note.dto.AgentStep;
 import org.med.note.dto.EvidenceReference;
-import org.med.note.service.MedicalAnswerGenerator;
-import org.med.note.service.MedicalRiskAssessor;
-import org.med.note.service.MockDrugKnowledgeBase;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class MedNoteAgent {
 
-    private final MockDrugKnowledgeBase knowledgeBase;
-    private final MedicalRiskAssessor riskAssessor;
-    private final MedicalAnswerGenerator answerGenerator;
+    private static final int MAX_TOOL_ITERATIONS = 8;
 
-    public MedNoteAgent(
-            MockDrugKnowledgeBase knowledgeBase,
-            MedicalRiskAssessor riskAssessor,
-            MedicalAnswerGenerator answerGenerator
-    ) {
-        this.knowledgeBase = knowledgeBase;
-        this.riskAssessor = riskAssessor;
-        this.answerGenerator = answerGenerator;
+    private final AgentToolRegistry toolRegistry;
+    private final AgentToolPlanner toolPlanner;
+    private final AgentRunStore runStore;
+
+    public MedNoteAgent(AgentToolRegistry toolRegistry, AgentToolPlanner toolPlanner, AgentRunStore runStore) {
+        this.toolRegistry = toolRegistry;
+        this.toolPlanner = toolPlanner;
+        this.runStore = runStore;
     }
 
     public AgentRunResponse run(AgentRunRequest request) {
         AgentRunRequest safeRequest = request == null ? AgentRunRequest.empty() : request;
         AgentExecution execution = execute(safeRequest);
-        String summary = "Demo agent completed " + execution.steps().size()
-                + " steps for topic: " + execution.topic()
+        String summary = "Demo agent session " + execution.session().id()
+                + " completed " + execution.session().toolCalls().size()
+                + " tool calls and " + execution.steps().size()
+                + " dynamic events for topic: " + execution.topic()
+                + ", intent: " + execution.intent()
                 + ", risk: " + execution.riskLevel()
                 + ", evidence: " + execution.evidence().size() + ".";
         return new AgentRunResponse(
@@ -53,79 +64,145 @@ public class MedNoteAgent {
         return execute(request == null ? AgentRunRequest.empty() : request).steps();
     }
 
+    public List<AgentToolDescriptor> availableTools() {
+        return toolRegistry.listDescriptors();
+    }
+
+    public Optional<AgentRunRecord> findSession(String sessionId) {
+        return runStore.findBySessionId(sessionId);
+    }
+
+    public List<AgentRunRecord> recentSessions(int limit) {
+        return runStore.recent(limit);
+    }
+
+    public List<ToolCallRecord> failedToolCalls(int limit) {
+        return runStore.failedToolCalls(limit);
+    }
+
     private AgentExecution execute(AgentRunRequest request) {
-        AgentRunRequest safeRequest = request == null ? AgentRunRequest.empty() : request;
-        String topic = normalizeTopic(safeRequest.topic());
-        String input = normalizeInput(safeRequest.input());
-        String intent = recognizeIntent(topic, input);
-        String rewrittenQuery = rewriteQuery(topic, input, intent);
-        List<EvidenceChunk> evidence = knowledgeBase.search(topic, rewrittenQuery, 4);
-        String riskLevel = riskAssessor.assess(input, evidence);
-        String finalAnswer = answerGenerator.generate(topic, input, riskLevel, evidence);
+        String topic = normalizeTopic(request.topic());
+        String input = normalizeInput(request.input());
+        AgentSession session = AgentSession.start();
+        Map<String, Object> memory = new HashMap<>();
+        memory.put("sessionId", session.id());
+        ToolContext context = new ToolContext(topic, input, List.of(), "", "", List.of(), List.of(), "LOW", "", memory);
 
         List<AgentStep> steps = new ArrayList<>();
-        steps.add(new AgentStep(1, "intent", "识别任务意图: " + intent + "；主题: " + topic));
-        steps.add(new AgentStep(2, "rewrite", "生成检索 query: " + rewrittenQuery));
-        steps.add(new AgentStep(3, "retrieve", formatEvidenceStep(evidence)));
-        steps.add(new AgentStep(4, "risk", "医学安全风险等级: " + riskLevel));
-        steps.add(new AgentStep(5, "prompt", answerGenerator.buildUserPrompt(topic, input, riskLevel, evidence)));
-        steps.add(new AgentStep(6, "final", finalAnswer));
+        int order = 1;
+        for (int iteration = 1; iteration <= MAX_TOOL_ITERATIONS; iteration++) {
+            ToolSelectionDecision decision = toolPlanner.selectNext(context, session.executedToolNames());
+            steps.add(AgentStep.thought(order++, "tool_selection", decision.reason(), Map.of(
+                    "sessionId", session.id(),
+                    "iteration", iteration,
+                    "selectedTool", decision.hasSelection() ? decision.selectedDescriptor().name() : "",
+                    "candidateTools", decision.candidateTools(),
+                    "unloadedTools", decision.unloadedTools(),
+                    "skippedTools", decision.skippedTools(),
+                    "stopReason", decision.stopReason(),
+                    "confidence", decision.confidence(),
+                    "requiresHumanReview", decision.requiresHumanReview()
+            )));
+            if (!decision.hasSelection()) {
+                break;
+            }
 
-        return new AgentExecution(topic, input, intent, rewrittenQuery, evidence, riskLevel, finalAnswer, steps);
+            Instant startedAt = Instant.now();
+            Map<String, Object> inputSnapshot = inputSnapshot(context);
+            try {
+                ToolResult result = decision.selectedTool().execute(context);
+                Instant finishedAt = Instant.now();
+                context = merge(context, result);
+                ToolCallRecord record = ToolCallRecord.completed(
+                        session.id(),
+                        session.toolCalls().size() + 1,
+                        decision.selectedDescriptor().name(),
+                        decision.selectedDescriptor().phase(),
+                        startedAt,
+                        finishedAt,
+                        result.summary(),
+                        inputSnapshot,
+                        result.metadata()
+                );
+                session.record(record);
+                steps.add(AgentStep.tool(order++, decision.selectedDescriptor().name(), result.summary(), Map.of(
+                        "sessionId", session.id(),
+                        "toolCall", record,
+                        "result", result.metadata()
+                )));
+
+                if ("answer_generation".equals(decision.selectedDescriptor().name())) {
+                    break;
+                }
+            } catch (Exception error) {
+                Instant finishedAt = Instant.now();
+                ToolCallRecord record = ToolCallRecord.failed(
+                        session.id(),
+                        session.toolCalls().size() + 1,
+                        decision.selectedDescriptor().name(),
+                        decision.selectedDescriptor().phase(),
+                        startedAt,
+                        finishedAt,
+                        inputSnapshot,
+                        error
+                );
+                session.record(record);
+                steps.add(new AgentStep(
+                        order++,
+                        decision.selectedDescriptor().name(),
+                        record.summary(),
+                        "tool",
+                        "failed",
+                        Map.of("sessionId", session.id(), "toolCall", record),
+                        Instant.now()
+                ));
+                break;
+            }
+        }
+
+        String finalAnswer = context.finalAnswer() == null || context.finalAnswer().isBlank()
+                ? "Demo agent 未生成最终回答，请检查工具选择记录或接入 answer_generation 工具实现。"
+                : context.finalAnswer();
+        if (!finalAnswer.equals(context.finalAnswer())) {
+            context = context.withFinalAnswer(finalAnswer);
+        }
+        steps.add(AgentStep.message(order, "final", finalAnswer, Map.of(
+                "sessionId", session.id(),
+                "toolCallCount", session.toolCalls().size(),
+                "toolCalls", session.toolCalls(),
+                "intent", context.intent(),
+                "riskLevel", context.riskLevel(),
+                "evidenceCount", context.evidence().size()
+        )));
+        runStore.save(session, steps, Instant.now());
+
+        return new AgentExecution(session, topic, input, context.intent(), context.rewrittenQuery(), context.evidence(), context.riskLevel(), finalAnswer, steps);
     }
 
-    private String recognizeIntent(String topic, String input) {
-        String text = topic + " " + input;
-        if (containsAny(text, "禁忌", "过敏")) {
-            return "CONTRAINDICATION";
-        }
-        if (containsAny(text, "不良反应", "副作用")) {
-            return "ADVERSE_REACTION";
-        }
-        if (containsAny(text, "用法", "用量", "怎么吃", "服用")) {
-            return "DOSAGE_ADVICE";
-        }
-        if (containsAny(text, "孕妇", "儿童", "老人", "肝肾")) {
-            return "SPECIAL_POPULATION";
-        }
-        if (containsAny(text, "注意事项", "注意")) {
-            return "CAUTION";
-        }
-        return "GENERAL_QA";
+    private ToolContext merge(ToolContext context, ToolResult result) {
+        List<String> taskKeywords = result.taskKeywords().isEmpty() ? context.taskKeywords() : result.taskKeywords();
+        String intent = result.intent() == null || result.intent().isBlank() ? context.intent() : result.intent();
+        String rewrittenQuery = result.rewrittenQuery() == null || result.rewrittenQuery().isBlank() ? context.rewrittenQuery() : result.rewrittenQuery();
+        List<String> queryKeywords = result.queryKeywords().isEmpty() ? context.queryKeywords() : result.queryKeywords();
+        List<EvidenceChunk> evidence = result.evidence().isEmpty() ? context.evidence() : result.evidence();
+        String riskLevel = result.riskLevel() == null || result.riskLevel().isBlank() ? context.riskLevel() : result.riskLevel();
+        String finalAnswer = result.finalAnswer() == null || result.finalAnswer().isBlank() ? context.finalAnswer() : result.finalAnswer();
+        context.memory().put(result.toolName(), result.metadata());
+        return new ToolContext(context.topic(), context.input(), taskKeywords, intent, rewrittenQuery, queryKeywords, evidence, riskLevel, finalAnswer, context.memory());
     }
 
-    private String rewriteQuery(String topic, String input, String intent) {
-        return (topic + " " + input + " " + switch (intent) {
-            case "CONTRAINDICATION" -> "禁忌 过敏 慎用";
-            case "ADVERSE_REACTION" -> "不良反应 副作用 停药";
-            case "DOSAGE_ADVICE" -> "用法用量 开水冲服 一日";
-            case "SPECIAL_POPULATION" -> "儿童 孕妇 老人 肝肾功能";
-            case "CAUTION" -> "注意事项 忌口 就医";
-            default -> "功能主治 注意事项 用法用量";
-        }).trim();
-    }
-
-    private String formatEvidenceStep(List<EvidenceChunk> evidence) {
-        if (evidence.isEmpty()) {
-            return "mock 知识库未命中证据";
-        }
-        return "mock 知识库命中 " + evidence.size() + " 条证据: "
-                + evidence.stream()
-                .map(chunk -> chunk.id() + "(" + chunk.drugName() + "/" + chunk.section() + ", score=" + chunk.score() + ")")
-                .toList();
+    private Map<String, Object> inputSnapshot(ToolContext context) {
+        return Map.of(
+                "intent", context.intent(),
+                "taskKeywords", context.taskKeywords(),
+                "queryKeywords", context.queryKeywords(),
+                "evidenceCount", context.evidence().size(),
+                "riskLevel", context.riskLevel()
+        );
     }
 
     private EvidenceReference toReference(EvidenceChunk chunk) {
         return new EvidenceReference(chunk.id(), chunk.drugName(), chunk.section(), chunk.content(), chunk.score());
-    }
-
-    private boolean containsAny(String text, String... keywords) {
-        for (String keyword : keywords) {
-            if (text.contains(keyword)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private String normalizeTopic(String topic) {
@@ -143,6 +220,7 @@ public class MedNoteAgent {
     }
 
     private record AgentExecution(
+            AgentSession session,
             String topic,
             String input,
             String intent,

@@ -1,7 +1,8 @@
 package org.med.note.agent.tool;
 
-import org.med.note.knowledge.evidence.EvidenceChunk;
-import org.med.note.agent.retrieval.EvidenceRetriever;
+import org.med.note.agent.retrieval.EvidenceRetrievalRequest;
+import org.med.note.agent.retrieval.EvidenceRetrievalResult;
+import org.med.note.agent.retrieval.EvidenceSearchService;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,18 +21,25 @@ import java.util.Map;
 )
 public class DrugKnowledgeSearchTool implements AgentTool {
 
-    private final EvidenceRetriever evidenceRetriever;
+    private final EvidenceSearchService evidenceSearchService;
 
-    public DrugKnowledgeSearchTool(EvidenceRetriever evidenceRetriever) {
-        this.evidenceRetriever = evidenceRetriever;
+    public DrugKnowledgeSearchTool(EvidenceSearchService evidenceSearchService) {
+        this.evidenceSearchService = evidenceSearchService;
     }
 
     @Override
     public ToolResult execute(ToolContext context) {
-        List<EvidenceChunk> evidence = evidenceRetriever.search(context.topic(), context.rewrittenQuery(), context.queryKeywords(), 4);
-        String summary = evidence.isEmpty()
+        EvidenceRetrievalResult retrievalResult = evidenceSearchService.retrieve(new EvidenceRetrievalRequest(
+                context.topic(),
+                context.rewrittenQuery(),
+                context.queryKeywords(),
+                context.intent(),
+                context.riskLevel(),
+                4
+        ));
+        String summary = retrievalResult.evidence().isEmpty()
                 ? "未命中药品说明书证据"
-                : "命中 " + evidence.size() + " 条药品说明书证据";
+                : "以 " + retrievalResult.mode() + " 模式命中 " + retrievalResult.evidence().size() + " 条药品说明书证据";
         return ToolResult.of(
                 "drug_knowledge_search",
                 summary,
@@ -40,11 +48,16 @@ public class DrugKnowledgeSearchTool implements AgentTool {
                 context.intent(),
                 context.rewrittenQuery(),
                 context.queryKeywords(),
-                evidence,
+                retrievalResult.evidence(),
                 context.riskLevel(),
                 context.finalAnswer(),
                 summary,
-                Map.of("query", context.rewrittenQuery(), "queryKeywords", context.queryKeywords(), "mode", "fixture-retrieval")
+                Map.of(
+                        "query", context.rewrittenQuery(),
+                        "queryKeywords", context.queryKeywords(),
+                        "mode", retrievalResult.mode().name(),
+                        "retrieval", retrievalResult.metadata()
+                )
         );
     }
 }

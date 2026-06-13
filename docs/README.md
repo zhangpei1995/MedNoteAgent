@@ -10,6 +10,7 @@ docs/
 ├── requirements/
 │   └── project-requirements.md
 ├── architecture/
+│   ├── agent-retrieval-optimization-design.md
 │   └── business-module-structure-design.md
 ├── guides/
 │   ├── development-guide.md
@@ -26,7 +27,8 @@ docs/
 | --- | --- | --- |
 | 1 | [项目需求](requirements/project-requirements.md) | 明确项目目标、功能范围、医学安全边界和验收标准。 |
 | 2 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) | 明确按业务上下文组织代码、仅存储层横向独立的目标结构。 |
-| 3 | [开发规范](guides/development-guide.md) | 明确包结构、接口设计、SQLite + MyBatis Plus 存储层规范和文档规范。 |
+| 3 | [Agent 检索与推理优化设计](architecture/agent-retrieval-optimization-design.md) | 明确速度和效果均衡的分层检索、分级推理、模型和重排策略。 |
+| 4 | [开发规范](guides/development-guide.md) | 明确包结构、接口设计、SQLite + MyBatis Plus 存储层规范和文档规范。 |
 
 ### 按任务阅读
 
@@ -34,6 +36,7 @@ docs/
 | --- | --- |
 | 调整项目目录、包职责或业务模块边界 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) |
 | 修改 Agent、知识图谱、证据召回、PDF 入库或存储边界 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) |
+| 优化 Agent 耗时、query 规划、证据召回、rerank 或回答链路 | [Agent 检索与推理优化设计](architecture/agent-retrieval-optimization-design.md) |
 | 使用代码结构索引和影响分析 | [CodeGraph 使用指南](guides/codegraph-guide.md) |
 
 ## 文档职责规则
@@ -56,6 +59,7 @@ docs/
 - 代码按业务上下文收敛；除数据存储层独立管理外，Controller、DTO、应用服务、领域接口和业务实现优先放入所属业务模块。
 - Agent 和 Agent 专属能力优先收敛在 `agent` 相关目录；知识图谱、证据片段和说明书入库能力优先收敛在 `knowledge`。
 - Agent 问答外部入口只接收用户自然语言问题；任务主题、检索范围和风险信号由内部规划链路生成。
+- Agent 证据召回采用分层检索和分级推理：FAST 优先，BALANCED 默认，高风险或低置信度时升级到 ACCURATE。
 - Entity、Mapper、SQLite Store 实现和 schema 初始化集中在 `persistence`；业务层不直接操作 Mapper。
 
 ## 参考资料

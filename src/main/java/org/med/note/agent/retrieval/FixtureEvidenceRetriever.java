@@ -1,15 +1,14 @@
 package org.med.note.agent.retrieval;
 
 import org.med.note.knowledge.evidence.EvidenceChunk;
-import org.med.note.agent.retrieval.EvidenceRetriever;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-@Service
-public class FixtureEvidenceRetriever implements EvidenceRetriever {
+@Component
+public class FixtureEvidenceRetriever implements EvidenceRecallSource {
 
     private static final List<EvidenceChunk> MOCK_EVIDENCE = List.of(
             new EvidenceChunk(
@@ -71,7 +70,6 @@ public class FixtureEvidenceRetriever implements EvidenceRetriever {
         return MOCK_EVIDENCE;
     }
 
-    @Override
     public List<EvidenceChunk> search(String topic, String query, List<String> queryKeywords, int limit) {
         String normalized = normalize(topic + " " + query + " " + String.join(" ", queryKeywords == null ? List.<String>of() : queryKeywords));
         String explicitDrugName = resolveExplicitDrugName(normalized);
@@ -87,6 +85,43 @@ public class FixtureEvidenceRetriever implements EvidenceRetriever {
                 .filter(chunk -> chunk.score() > 0)
                 .sorted(Comparator.comparingDouble(EvidenceChunk::score).reversed())
                 .limit(limit)
+                .toList();
+    }
+
+    @Override
+    public String name() {
+        return "keyword";
+    }
+
+    @Override
+    public List<EvidenceCandidate> recall(EvidenceRetrievalRequest request, int limit) {
+        String normalized = normalize(request.searchableText());
+        String explicitDrugName = resolveExplicitDrugName(normalized);
+        return MOCK_EVIDENCE.stream()
+                .filter(chunk -> explicitDrugName == null || chunk.drugName().equals(explicitDrugName))
+                .map(chunk -> new EvidenceCandidate(
+                        new EvidenceChunk(
+                                chunk.id(),
+                                chunk.drugName(),
+                                chunk.section(),
+                                chunk.content(),
+                                score(chunk, normalized, request.queryKeywords())
+                        ),
+                        name(),
+                        0,
+                        score(chunk, normalized, request.queryKeywords()),
+                        matchedTerms(chunk, normalized, request.queryKeywords())
+                ))
+                .filter(candidate -> candidate.score() > 0)
+                .sorted(Comparator.comparingDouble(EvidenceCandidate::score).reversed())
+                .limit(limit)
+                .map(candidate -> new EvidenceCandidate(
+                        candidate.chunk(),
+                        candidate.channel(),
+                        Math.toIntExact(1 + candidateIndex(candidate, normalized, request.queryKeywords())),
+                        candidate.score(),
+                        candidate.matchedTerms()
+                ))
                 .toList();
     }
 
@@ -128,6 +163,33 @@ public class FixtureEvidenceRetriever implements EvidenceRetriever {
             }
         }
         return score;
+    }
+
+    private long candidateIndex(EvidenceCandidate target, String normalized, List<String> queryKeywords) {
+        return MOCK_EVIDENCE.stream()
+                .map(chunk -> new EvidenceCandidate(
+                        chunk,
+                        name(),
+                        0,
+                        score(chunk, normalized, queryKeywords),
+                        matchedTerms(chunk, normalized, queryKeywords)
+                ))
+                .filter(candidate -> candidate.score() > 0)
+                .sorted(Comparator.comparingDouble(EvidenceCandidate::score).reversed())
+                .takeWhile(candidate -> !candidate.chunk().id().equals(target.chunk().id()))
+                .count();
+    }
+
+    private List<String> matchedTerms(EvidenceChunk chunk, String query, List<String> queryKeywords) {
+        String haystack = normalize(chunk.drugName() + " " + chunk.section() + " " + chunk.content() + " " + String.join(" ", knowledgeKeywords(chunk)));
+        return queryKeywords == null
+                ? List.of()
+                : queryKeywords.stream()
+                .filter(keyword -> keyword != null && !keyword.isBlank())
+                .filter(keyword -> haystack.contains(normalize(keyword)) || query.contains(normalize(keyword)))
+                .distinct()
+                .limit(8)
+                .toList();
     }
 
     private List<String> knowledgeKeywords(EvidenceChunk chunk) {

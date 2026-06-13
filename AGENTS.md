@@ -10,7 +10,7 @@
 - `docs/guides/codegraph-guide.md`
 - `docs/README.md`
 
-如果任务涉及需求、架构、PDF 抽取、知识图谱、并发、存储或下一阶段计划，还必须按 `docs/README.md` 的索引读取对应文档。
+如果任务涉及需求、架构、PDF 抽取、知识图谱、并发或存储，还必须按 `docs/README.md` 的索引读取对应文档。
 
 ## Documentation Index Rule
 
@@ -19,11 +19,11 @@
 新增或导入文档时遵循：
 
 - 需求和验收标准放入 `docs/requirements/`。
-- 架构、模块设计、技术方案、演进计划放入 `docs/architecture/`。
+- 架构、模块设计和技术方案放入 `docs/architecture/`。该目录只保留当前最新设计。
 - 编码规范、操作指南、开发流程放入 `docs/guides/`。
 - 原始资料、外部资料和样本文档放入 `docs/reference/`。
 - 新增稳定 Markdown 文档后，必须更新 `docs/README.md` 的目录结构、推荐阅读顺序或文档索引。
-- 文档文件名使用小写英文和中划线，例如 `sqlite-knowledge-graph-design.md`。
+- 文档文件名使用小写英文和中划线，例如 `business-module-structure-design.md`。
 
 ## CodeGraph Requirement
 
@@ -71,9 +71,9 @@ codegraph affected <files...>
 ## Development Rules
 
 - 先用 `rg`、CodeGraph 和源码阅读理解现有结构，再改代码。
-- 新增代码必须符合 `docs/guides/development-guide.md` 中的包职责、命名、Handler/Service 分层和测试规范。
-- 当前存储方案使用 SQLite，存储层框架使用 MyBatis Plus；业务层不得直接操作 Mapper。
-- 当前项目按正式开发推进，不以 demo 作为代码或文档边界。
+- 新增代码必须符合 `docs/guides/development-guide.md` 中的包职责、命名、业务模块分层和测试规范。
+- 存储方案使用 SQLite，存储层框架使用 MyBatis Plus；业务层不得直接操作 Mapper。
+- 项目按正式开发推进，不以 demo 作为代码或文档边界。
 - 优先遵循现有架构、命名、包结构和测试风格。
 - 不做无关重构。
 - 不回滚用户已有改动。

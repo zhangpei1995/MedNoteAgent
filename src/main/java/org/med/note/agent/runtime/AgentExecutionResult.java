@@ -1,7 +1,7 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.domain.EvidenceChunk;
-import org.med.note.dto.AgentStep;
+import org.med.note.knowledge.evidence.EvidenceChunk;
+import org.med.note.agent.api.AgentStep;
 
 import java.util.List;
 

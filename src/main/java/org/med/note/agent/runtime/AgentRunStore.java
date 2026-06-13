@@ -1,13 +1,13 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentStep;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Stores agent run audit data. Demo uses an in-memory implementation.
+ * Stores agent run audit data.
  */
 public interface AgentRunStore {
     AgentRunRecord save(AgentSession session, List<AgentStep> steps, Instant finishedAt);

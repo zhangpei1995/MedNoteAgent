@@ -1,6 +1,6 @@
 package org.med.note.agent.tool;
 
-import org.med.note.domain.EvidenceChunk;
+import org.med.note.knowledge.evidence.EvidenceChunk;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +20,10 @@ public record ToolContext(
         String finalAnswer,
         Map<String, Object> memory
 ) {
+    public ToolContext withTopic(String newTopic) {
+        return new ToolContext(newTopic, input, taskKeywords, intent, rewrittenQuery, queryKeywords, evidence, riskLevel, finalAnswer, memory);
+    }
+
     public ToolContext withTaskKeywords(List<String> newTaskKeywords) {
         return new ToolContext(topic, input, safeList(newTaskKeywords), intent, rewrittenQuery, queryKeywords, evidence, riskLevel, finalAnswer, memory);
     }

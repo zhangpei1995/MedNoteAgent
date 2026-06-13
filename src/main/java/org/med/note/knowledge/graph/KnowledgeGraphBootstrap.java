@@ -1,7 +1,7 @@
 package org.med.note.knowledge.graph;
 
-import org.med.note.domain.EvidenceChunk;
-import org.med.note.service.impl.MockDrugKnowledgeBase;
+import org.med.note.knowledge.evidence.EvidenceChunk;
+import org.med.note.agent.retrieval.FixtureEvidenceRetriever;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
@@ -11,27 +11,27 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Seeds the local demo graph from mock evidence when the SQLite graph is empty.
+ * Seeds the local graph from fixture evidence when the SQLite graph is empty.
  */
 @Component
 public class KnowledgeGraphBootstrap {
 
     private final KnowledgeGraphStore graphStore;
-    private final MockDrugKnowledgeBase mockDrugKnowledgeBase;
+    private final FixtureEvidenceRetriever fixtureEvidenceRetriever;
 
-    public KnowledgeGraphBootstrap(KnowledgeGraphStore graphStore, MockDrugKnowledgeBase mockDrugKnowledgeBase) {
+    public KnowledgeGraphBootstrap(KnowledgeGraphStore graphStore, FixtureEvidenceRetriever fixtureEvidenceRetriever) {
         this.graphStore = graphStore;
-        this.mockDrugKnowledgeBase = mockDrugKnowledgeBase;
+        this.fixtureEvidenceRetriever = fixtureEvidenceRetriever;
     }
 
     @PostConstruct
-    public void seedDemoGraphIfEmpty() {
+    public void seedGraphIfEmpty() {
         if (graphStore.findNode(nodeId("drug", "菖麻熄风颗粒")).isPresent()) {
             return;
         }
         List<KnowledgeGraphNode> nodes = new ArrayList<>();
         List<KnowledgeGraphEdge> edges = new ArrayList<>();
-        for (EvidenceChunk evidence : mockDrugKnowledgeBase.allEvidence()) {
+        for (EvidenceChunk evidence : fixtureEvidenceRetriever.allEvidence()) {
             String drugNodeId = nodeId("drug", evidence.drugName());
             String sectionNodeId = nodeId("section", evidence.drugName() + ":" + evidence.section());
             String evidenceNodeId = nodeId("evidence", evidence.id());

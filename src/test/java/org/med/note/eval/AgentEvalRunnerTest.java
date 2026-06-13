@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.med.note.MedNoteAgentApplication;
 import org.med.note.agent.MedNoteAgent;
-import org.med.note.dto.AgentRunRequest;
-import org.med.note.dto.AgentRunResponse;
+import org.med.note.agent.api.AgentRunRequest;
+import org.med.note.agent.api.AgentRunResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
@@ -20,7 +20,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Lightweight eval runner for the demo agent fixture.
+ * Lightweight eval runner for the Agent fixture.
  */
 @SpringBootTest(classes = MedNoteAgentApplication.class)
 class AgentEvalRunnerTest {
@@ -57,10 +57,7 @@ class AgentEvalRunnerTest {
         String caseId = evalCase.path("id").asText();
         JsonNode request = evalCase.path("request");
         JsonNode expected = evalCase.path("expected");
-        AgentRunResponse response = agent.run(new AgentRunRequest(
-                request.path("topic").asText(),
-                request.path("input").asText()
-        ));
+        AgentRunResponse response = agent.run(new AgentRunRequest(request.path("question").asText()));
 
         List<String> failures = new ArrayList<>();
         assertContainsAll(failures, "tools", toolStages(response), expected.path("mustSelectTools"));

@@ -55,6 +55,7 @@ docs/
 - 项目不是 demo；功能可以简单，但命名、接口和文档必须按正式开发组织。
 - 代码按业务上下文收敛；除数据存储层独立管理外，Controller、DTO、应用服务、领域接口和业务实现优先放入所属业务模块。
 - Agent 和 Agent 专属能力优先收敛在 `agent` 相关目录；知识图谱、证据片段和说明书入库能力优先收敛在 `knowledge`。
+- Agent 问答外部入口只接收用户自然语言问题；任务主题、检索范围和风险信号由内部规划链路生成。
 - Entity、Mapper、SQLite Store 实现和 schema 初始化集中在 `persistence`；业务层不直接操作 Mapper。
 
 ## 参考资料

@@ -1,6 +1,6 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentStep;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.time.Instant;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Non-persistent run store for local demo and troubleshooting endpoints.
+ * Non-persistent run store for local troubleshooting endpoints.
  */
 public class InMemoryAgentRunStore implements AgentRunStore {
 

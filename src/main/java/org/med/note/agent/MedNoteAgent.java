@@ -15,9 +15,9 @@ import org.med.note.agent.runtime.ToolSelectionBatch;
 import org.med.note.agent.tool.AgentToolDescriptor;
 import org.med.note.agent.tool.AgentToolRegistry;
 import org.med.note.agent.tool.ToolContext;
-import org.med.note.dto.AgentRunRequest;
-import org.med.note.dto.AgentRunResponse;
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentRunRequest;
+import org.med.note.agent.api.AgentRunResponse;
+import org.med.note.agent.api.AgentStep;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -63,7 +63,7 @@ public class MedNoteAgent {
         return responseFactory.create(execute(safeRequest));
     }
 
-    public List<AgentStep> buildDemoSteps(AgentRunRequest request) {
+    public List<AgentStep> buildSteps(AgentRunRequest request) {
         return execute(request == null ? AgentRunRequest.empty() : request).steps();
     }
 
@@ -84,12 +84,11 @@ public class MedNoteAgent {
     }
 
     private AgentExecutionResult execute(AgentRunRequest request) {
-        String topic = normalizeTopic(request.topic());
-        String input = normalizeInput(request.input());
+        String input = normalizeQuestion(request.question());
         AgentSession session = AgentSession.start();
         Map<String, Object> memory = new HashMap<>();
         memory.put("sessionId", session.id());
-        ToolContext context = new ToolContext(topic, input, List.of(), "", "", List.of(), List.of(), "LOW", "", memory);
+        ToolContext context = new ToolContext("", input, List.of(), "", "", List.of(), List.of(), "LOW", "", memory);
 
         List<AgentStep> steps = new ArrayList<>();
         int order = 1;
@@ -124,7 +123,7 @@ public class MedNoteAgent {
         }
 
         String finalAnswer = context.finalAnswer() == null || context.finalAnswer().isBlank()
-                ? "Demo agent 未生成最终回答，请检查工具选择记录或接入 answer_generation 工具实现。"
+                ? "Agent 未生成最终回答，请检查工具选择记录或接入 answer_generation 工具实现。"
                 : context.finalAnswer();
         if (!finalAnswer.equals(context.finalAnswer())) {
             context = context.withFinalAnswer(finalAnswer);
@@ -132,21 +131,14 @@ public class MedNoteAgent {
         steps.add(stepFactory.finalMessage(order, session.id(), session, context, finalAnswer));
         runStore.save(session, steps, Instant.now());
 
-        return new AgentExecutionResult(session, topic, input, context.intent(), context.rewrittenQuery(), context.evidence(), context.riskLevel(), finalAnswer, steps);
+        return new AgentExecutionResult(session, context.topic(), input, context.intent(), context.rewrittenQuery(), context.evidence(), context.riskLevel(), finalAnswer, steps);
     }
 
-    private String normalizeTopic(String topic) {
-        if (topic == null || topic.isBlank()) {
-            return "药品说明书结构化摘要";
+    private String normalizeQuestion(String question) {
+        if (question == null || question.isBlank()) {
+            return "请根据药品说明书回答用药安全问题。";
         }
-        return topic.trim();
-    }
-
-    private String normalizeInput(String input) {
-        if (input == null || input.isBlank()) {
-            return "未提供原始内容，使用本地示例输入";
-        }
-        return input.trim();
+        return question.trim();
     }
 
 }

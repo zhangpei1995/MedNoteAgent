@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>MedNoteAgent</name>
-    <description>Med note extraction and demo agent service</description>
+    <description>Med note extraction and agent service</description>
 
     <properties>
         <java.version>17</java.version>

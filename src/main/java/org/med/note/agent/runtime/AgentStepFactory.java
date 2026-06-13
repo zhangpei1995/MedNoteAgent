@@ -1,7 +1,7 @@
 package org.med.note.agent.runtime;
 
 import org.med.note.agent.tool.ToolContext;
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentStep;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;

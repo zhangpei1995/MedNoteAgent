@@ -1,8 +1,8 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.domain.EvidenceChunk;
-import org.med.note.dto.AgentRunResponse;
-import org.med.note.dto.EvidenceReference;
+import org.med.note.knowledge.evidence.EvidenceChunk;
+import org.med.note.agent.api.AgentRunResponse;
+import org.med.note.agent.api.EvidenceReference;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -14,7 +14,7 @@ import java.time.Instant;
 public class AgentRunResponseFactory {
 
     public AgentRunResponse create(AgentExecutionResult execution) {
-        String summary = "Demo agent session " + execution.session().id()
+        String summary = "Agent session " + execution.session().id()
                 + " completed " + execution.session().toolCalls().size()
                 + " tool calls and " + execution.steps().size()
                 + " dynamic events for topic: " + execution.topic()
@@ -22,7 +22,7 @@ public class AgentRunResponseFactory {
                 + ", risk: " + execution.riskLevel()
                 + ", evidence: " + execution.evidence().size() + ".";
         return new AgentRunResponse(
-                "med-note-demo-agent",
+                "med-note-agent",
                 summary,
                 execution.finalAnswer(),
                 execution.riskLevel(),

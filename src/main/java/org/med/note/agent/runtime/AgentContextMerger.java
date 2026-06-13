@@ -2,7 +2,7 @@ package org.med.note.agent.runtime;
 
 import org.med.note.agent.tool.ToolContext;
 import org.med.note.agent.tool.ToolResult;
-import org.med.note.domain.EvidenceChunk;
+import org.med.note.knowledge.evidence.EvidenceChunk;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -15,6 +15,7 @@ import java.util.List;
 public class AgentContextMerger {
 
     public ToolContext merge(ToolContext context, ToolResult result) {
+        String topic = blank(result.topic()) ? context.topic() : result.topic();
         List<String> taskKeywords = result.taskKeywords().isEmpty() ? context.taskKeywords() : result.taskKeywords();
         String intent = blank(result.intent()) ? context.intent() : result.intent();
         String rewrittenQuery = blank(result.rewrittenQuery()) ? context.rewrittenQuery() : result.rewrittenQuery();
@@ -25,7 +26,7 @@ public class AgentContextMerger {
 
         HashMap<String, Object> memory = new HashMap<>(context.memory());
         memory.put(result.toolName(), result.metadata());
-        return new ToolContext(context.topic(), context.input(), taskKeywords, intent, rewrittenQuery, queryKeywords, evidence, riskLevel, finalAnswer, memory);
+        return new ToolContext(topic, context.input(), taskKeywords, intent, rewrittenQuery, queryKeywords, evidence, riskLevel, finalAnswer, memory);
     }
 
     public ToolContext snapshot(ToolContext context) {

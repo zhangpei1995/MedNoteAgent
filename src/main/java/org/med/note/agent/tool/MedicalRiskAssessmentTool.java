@@ -1,6 +1,6 @@
 package org.med.note.agent.tool;
 
-import org.med.note.service.spi.RiskAssessor;
+import org.med.note.agent.safety.RiskAssessor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -8,7 +8,7 @@ import java.util.Map;
 @Component
 @AgentToolDefinition(
         name = "medical_risk_assessment",
-        description = "根据用户问题和证据识别医学安全风险等级。当前为 demo 规则，后续可替换为安全策略工具。",
+        description = "根据用户问题和证据识别医学安全风险等级。当前为本地规则，后续可替换为安全策略工具。",
         phase = "safety",
         order = 40,
         required = true,
@@ -30,6 +30,7 @@ public class MedicalRiskAssessmentTool implements AgentTool {
         return ToolResult.of(
                 "medical_risk_assessment",
                 "医学安全风险等级: " + riskLevel,
+                context.topic(),
                 context.taskKeywords(),
                 context.intent(),
                 context.rewrittenQuery(),
@@ -38,7 +39,7 @@ public class MedicalRiskAssessmentTool implements AgentTool {
                 riskLevel,
                 context.finalAnswer(),
                 "医学安全风险等级: " + riskLevel,
-                Map.of("riskLevel", riskLevel, "mode", "demo-rule-placeholder")
+                Map.of("riskLevel", riskLevel, "mode", "rule-based")
         );
     }
 }

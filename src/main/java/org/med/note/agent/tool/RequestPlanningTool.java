@@ -1,6 +1,6 @@
 package org.med.note.agent.tool;
 
-import org.med.note.service.spi.RequestPlanner;
+import org.med.note.agent.planning.RequestPlanner;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -37,13 +37,15 @@ public class RequestPlanningTool implements AgentTool {
 
     @Override
     public ToolResult execute(ToolContext context) {
-        RequestPlanner.Plan plan = requestPlanner.plan(context.topic(), context.input());
+        RequestPlanner.Plan plan = requestPlanner.plan(context.input());
         return ToolResult.of(
                 "request_planning",
                 "完成请求理解: intent=" + plan.intent()
+                        + "；topic=" + plan.topic()
                         + "；queryTargets=" + plan.queryTargets()
                         + "；risk=" + plan.medicationRiskLevel()
                         + "；recommended=" + plan.recommendedInstructions(),
+                plan.topic(),
                 plan.taskKeywords(),
                 plan.intent(),
                 plan.rewrittenQuery(),
@@ -53,6 +55,7 @@ public class RequestPlanningTool implements AgentTool {
                 context.finalAnswer(),
                 plan.rewrittenQuery(),
                 Map.of(
+                        "topic", plan.topic(),
                         "taskKeywords", plan.taskKeywords(),
                         "queryKeywords", plan.queryKeywords(),
                         "queryTargets", plan.queryTargets(),
@@ -61,7 +64,7 @@ public class RequestPlanningTool implements AgentTool {
                         "recommendedInstructions", plan.recommendedInstructions(),
                         "keywordModel", keywordModel,
                         "intentModel", intentModel,
-                        "mode", "demo-rule-placeholder"
+                        "mode", "rule-based"
                 )
         );
     }

@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-当前 demo agent 已经具备工具注册、动态选择、工具调用审计和会话查询能力。原执行模型是每轮只选择并执行一个工具：
+当前 Agent 已经具备工具注册、动态选择、工具调用审计和会话查询能力。原执行模型是每轮只选择并执行一个工具：
 
 ```text
 request_planning
@@ -11,7 +11,7 @@ request_planning
   -> answer_generation
 ```
 
-这个模型简单可靠，但当检索、风险评估、外部模型调用都变成真实远程调用后，请求耗时会线性叠加。为了降低端到端耗时，本次调整引入依赖感知的批量计划与并发执行，并把 agent 运行记录从内存迁移到 SQLite。
+这个模型简单可靠，但当检索、风险评估、外部模型调用都变成真实远程调用后，请求耗时会线性叠加。为了降低端到端耗时，当前设计引入依赖感知的批量计划与并发执行，并把 Agent 运行记录持久化到 SQLite。
 
 ## 2. 设计目标
 
@@ -19,7 +19,7 @@ request_planning
 2. **依赖显式化**：每个工具通过注解声明 `dependsOn` 与 `parallelizable`，调度器不隐式猜测工具关系。
 3. **结果稳定可审计**：并发工具完成后，仍按 planner 决定的工具顺序合并结果和生成审计记录。
 4. **接口兼容**：`AgentRunResponse`、`AgentStep`、`AgentRunRecord` 等外部响应结构保持不变，仅在 step metadata 中补充并发相关字段。
-5. **SQLite 模拟 MySQL**：本地使用 SQLite 文件存储，表结构采用接近 MySQL 的 run、step、tool_call 三表模型，后续可平滑迁移。
+5. **SQLite + MyBatis Plus**：当前使用 SQLite 文件存储，通过 MyBatis Plus Mapper 访问 run、step、tool_call 三表，后续可在保持上层接口不变的前提下迁移 MySQL。
 
 ## 3. 并发执行模型
 
@@ -122,7 +122,25 @@ mednote:
         path: data/mednote-agent.db
 ```
 
-`data/*.db` 属于运行时产物，已加入 `.gitignore`。启动时 `SqliteAgentRunStore` 会自动创建目录和表。
+`data/*.db` 属于运行时产物，已加入 `.gitignore`。启动时 `SqliteSchemaInitializer` 负责创建目录和表，`SqliteAgentRunStore` 通过 MyBatis Plus Mapper 读写数据。
+
+### 4.1.1 存储层边界
+
+```text
+AgentRunStore
+  -> SqliteAgentRunStore
+      -> AgentRunMapper
+      -> AgentStepMapper
+      -> AgentToolCallMapper
+          -> SQLite
+```
+
+约束：
+
+1. `MedNoteAgent` 只依赖 `AgentRunStore`。
+2. `SqliteAgentRunStore` 负责 record 与 entity 转换。
+3. Mapper 只放在 `dao` 包，不进入业务编排层。
+4. 表结构变化时同步更新 entity、mapper、schema 初始化和测试。
 
 ### 4.2 表结构
 
@@ -184,7 +202,7 @@ idx_agent_tool_calls_status_finished_at
 
 这样做的原因：
 
-1. 当前 demo 阶段字段仍会频繁演进。
+1. 当前字段仍会随正式功能演进。
 2. API 读取可以直接恢复现有 record，降低兼容成本。
 3. 后续迁 MySQL 时，可先保留 JSON 字段，再逐步把高频查询字段拆成标准列。
 
@@ -194,13 +212,13 @@ idx_agent_tool_calls_status_finished_at
 
 ## 5. 迁移到 MySQL 的建议
 
-SQLite 当前用于本地和 demo；迁 MySQL 时建议：
+SQLite 是当前正式存储方案；迁 MySQL 时建议：
 
 1. 把 `VARCHAR(40)` 时间字段改为 `DATETIME(3)` 或 `TIMESTAMP(3)`。
 2. 把 `TEXT` JSON 字段改为 `JSON` 类型。
 3. 给 `agent_steps(session_id, step_order)` 和 `agent_tool_calls(session_id, tool_order)` 增加唯一索引。
 4. 给外键增加 `ON DELETE CASCADE`，简化保留策略删除逻辑。
-5. 将 `SqliteAgentRunStore` 抽象为 JDBC 实现或新增 `MysqlAgentRunStore`，保持 `AgentRunStore` 接口不变。
+5. 新增 `MysqlAgentRunStore` 或通用关系型实现，保持 `AgentRunStore` 接口不变。
 
 ## 6. 验证结果
 

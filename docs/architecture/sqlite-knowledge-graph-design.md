@@ -4,7 +4,7 @@
 
 知识图谱用于沉淀药品说明书中的结构化关系，支撑后续检索、证据追踪、图谱扩展和医学安全策略。
 
-本阶段使用 SQLite 模拟 MySQL 表结构，目标不是一次性实现完整图数据库能力，而是先把节点、边、读写接口和本地持久化边界设计清楚。
+当前阶段使用 SQLite 作为正式本地存储方案，并通过 MyBatis Plus 访问节点和边表。目标不是一次性实现完整图数据库能力，而是先把节点、边、读写接口和持久化边界设计清楚，后续再按接口替换 MySQL 或图数据库实现。
 
 ## 2. 核心抽象
 
@@ -27,7 +27,7 @@ src/main/java/org/med/note/knowledge/graph
 | --- | --- | --- |
 | `KnowledgeGraphReader` | 查节点、搜索节点、查入边/出边、统计节点 | 检索、问答、调试接口 |
 | `KnowledgeGraphWriter` | upsert 节点、upsert 边、批量写入子图 | 说明书入库、抽取流程 |
-| `KnowledgeGraphStore` | 组合读写接口 | 本地 demo 或管理流程 |
+| `KnowledgeGraphStore` | 组合读写接口 | 本地服务或管理流程 |
 
 读写分离的原因：
 
@@ -50,7 +50,7 @@ createdAt      创建时间
 updatedAt      更新时间
 ```
 
-当前 demo 节点类型：
+当前节点类型：
 
 | 类型 | 含义 | 示例 |
 | --- | --- | --- |
@@ -74,7 +74,7 @@ createdAt      创建时间
 updatedAt      更新时间
 ```
 
-当前 demo 边类型：
+当前边类型：
 
 | 类型 | 方向 | 含义 |
 | --- | --- | --- |
@@ -173,13 +173,13 @@ findIncomingEdges(targetNodeId, edgeType, limit)
 
 `edgeType` 允许为空，表示读取某节点的全部出边或入边。
 
-## 8. Demo 初始化
+## 8. 初始化策略
 
 `KnowledgeGraphBootstrap` 会在启动时检查 `countNodes()`：
 
 ```text
 if graph is empty:
-  read MockDrugKnowledgeBase.allEvidence()
+  read current seed evidence data
   create DRUG nodes
   create INSTRUCTION_SECTION nodes
   create EVIDENCE_CHUNK nodes
@@ -187,7 +187,25 @@ if graph is empty:
   write by upsertSubgraph
 ```
 
-这样本地 demo 首次启动即可拥有可读写的知识图谱。真实说明书入库完成后，这个 bootstrap 可以替换成 ingestion handler。
+这样本地环境首次启动即可拥有可读写的基础知识图谱。当前代码中的种子数据仅用于轻量功能启动，不应作为长期命名和模块边界依据。真实说明书入库完成后，这个 bootstrap 应逐步收敛为正式 ingestion 流程的一部分，或仅保留为开发环境数据初始化器。
+
+## 8.1 MyBatis Plus 边界
+
+```text
+KnowledgeGraphReader / KnowledgeGraphWriter
+  -> KnowledgeGraphStore
+      -> SqliteKnowledgeGraphStore
+          -> KnowledgeGraphNodeMapper
+          -> KnowledgeGraphEdgeMapper
+              -> SQLite
+```
+
+约束：
+
+1. 问答、检索和入库流程只依赖 Reader / Writer / Store 接口。
+2. `SqliteKnowledgeGraphStore` 负责领域对象和 entity 转换。
+3. Mapper 和 entity 只表达持久化结构，不承载图谱业务规则。
+4. 后续迁移 MySQL 或图数据库时，优先新增 Store 实现，不修改上层消费代码。
 
 ## 9. 后续迁移建议
 

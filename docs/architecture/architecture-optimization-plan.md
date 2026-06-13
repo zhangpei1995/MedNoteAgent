@@ -1,5 +1,7 @@
 # 架构批判性 Review 与优化计划
 
+> 状态：历史复盘。当前架构真相源为 [Agent 框架设计](agent-framework-design.md) 和 [开发规范](../guides/development-guide.md)。若本文与当前主线文档或代码冲突，以当前主线文档和代码为准。
+
 本文以批判视角评审当前 MedNoteAgent 架构，重点回答：现在的问题是什么、哪些设计需要收敛、后续按什么顺序优化。
 
 ## 1. 总体判断

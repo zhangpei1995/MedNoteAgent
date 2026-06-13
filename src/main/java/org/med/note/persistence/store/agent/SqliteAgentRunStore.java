@@ -60,12 +60,14 @@ public class SqliteAgentRunStore implements AgentRunStore {
                 List.copyOf(steps)
         );
         deleteSession(session.id());
-        runMapper.insert(toRunEntity(record));
+        AgentRunEntity runEntity = toRunEntity(record);
+        runMapper.insert(runEntity);
+        Long agentRunId = ensureRunId(runEntity.getId(), record.sessionId());
         for (AgentStep step : steps) {
-            stepMapper.insert(toStepEntity(record.sessionId(), step));
+            stepMapper.insert(toStepEntity(agentRunId, step));
         }
         for (ToolCallRecord toolCall : record.toolCalls()) {
-            toolCallMapper.insert(toToolCallEntity(toolCall));
+            toolCallMapper.insert(toToolCallEntity(agentRunId, toolCall));
         }
         evictOldestIfNeeded();
         return record;
@@ -76,7 +78,7 @@ public class SqliteAgentRunStore implements AgentRunStore {
         if (sessionId == null || sessionId.isBlank()) {
             return Optional.empty();
         }
-        AgentRunEntity entity = runMapper.selectById(sessionId);
+        AgentRunEntity entity = findRunEntity(sessionId).orElse(null);
         return entity == null ? Optional.empty() : Optional.of(read(entity.getPayloadJson(), AgentRunRecord.class));
     }
 
@@ -113,9 +115,9 @@ public class SqliteAgentRunStore implements AgentRunStore {
         return entity;
     }
 
-    private AgentStepEntity toStepEntity(String sessionId, AgentStep step) {
+    private AgentStepEntity toStepEntity(Long agentRunId, AgentStep step) {
         AgentStepEntity entity = new AgentStepEntity();
-        entity.setSessionId(sessionId);
+        entity.setAgentRunId(agentRunId);
         entity.setStepOrder(step.order());
         entity.setStage(step.stage());
         entity.setEventType(step.eventType());
@@ -126,9 +128,9 @@ public class SqliteAgentRunStore implements AgentRunStore {
         return entity;
     }
 
-    private AgentToolCallEntity toToolCallEntity(ToolCallRecord toolCall) {
+    private AgentToolCallEntity toToolCallEntity(Long agentRunId, ToolCallRecord toolCall) {
         AgentToolCallEntity entity = new AgentToolCallEntity();
-        entity.setSessionId(toolCall.sessionId());
+        entity.setAgentRunId(agentRunId);
         entity.setToolOrder(toolCall.order());
         entity.setToolName(toolCall.toolName());
         entity.setPhase(toolCall.phase());
@@ -147,9 +149,11 @@ public class SqliteAgentRunStore implements AgentRunStore {
     }
 
     private void deleteSession(String sessionId) {
-        stepMapper.delete(new LambdaQueryWrapper<AgentStepEntity>().eq(AgentStepEntity::getSessionId, sessionId));
-        toolCallMapper.delete(new LambdaQueryWrapper<AgentToolCallEntity>().eq(AgentToolCallEntity::getSessionId, sessionId));
-        runMapper.deleteById(sessionId);
+        findRunEntity(sessionId).ifPresent(run -> {
+            stepMapper.delete(new LambdaQueryWrapper<AgentStepEntity>().eq(AgentStepEntity::getAgentRunId, run.getId()));
+            toolCallMapper.delete(new LambdaQueryWrapper<AgentToolCallEntity>().eq(AgentToolCallEntity::getAgentRunId, run.getId()));
+            runMapper.deleteById(run.getId());
+        });
     }
 
     private void evictOldestIfNeeded() {
@@ -168,6 +172,21 @@ public class SqliteAgentRunStore implements AgentRunStore {
         } catch (JsonProcessingException error) {
             throw new IllegalStateException("序列化 agent 存储对象失败", error);
         }
+    }
+
+    private Optional<AgentRunEntity> findRunEntity(String sessionId) {
+        return Optional.ofNullable(runMapper.selectOne(new LambdaQueryWrapper<AgentRunEntity>()
+                .eq(AgentRunEntity::getSessionId, sessionId)
+                .last("LIMIT 1")));
+    }
+
+    private Long ensureRunId(Long id, String sessionId) {
+        if (id != null) {
+            return id;
+        }
+        return findRunEntity(sessionId)
+                .map(AgentRunEntity::getId)
+                .orElseThrow(() -> new IllegalStateException("保存 agent 会话后未获取到自增 ID: " + sessionId));
     }
 
     private <T> T read(String value, Class<T> type) {

@@ -79,6 +79,9 @@ SQLite
 - Store / Repository / Reader / Writer 的接口属于业务上下文，数据库实现属于 `persistence/store`。
 - 业务层不得直接依赖 Mapper，不拼接 SQL。
 - JSON 快照字段只用于审计和调试；高频查询字段应拆为标准列。
+- 每张业务表必须有 `id INTEGER PRIMARY KEY AUTOINCREMENT` 作为数据库主键。
+- 表间关系必须通过自增 `id` 外键关联；`session_id`、`node_id`、`evidence_id` 这类稳定业务标识保留为唯一键或普通业务列，不作为表间外键。
+- 表结构按业务维度和适度范式拆分。Agent 运行审计围绕 `agent_runs`、`agent_steps`、`agent_tool_calls` 组织；知识图谱围绕 `knowledge_graph_nodes`、`knowledge_graph_edges` 组织。避免把可查询关系埋进 JSON，也避免为了形式完整提前拆出没有独立业务含义的表。
 
 示例：
 

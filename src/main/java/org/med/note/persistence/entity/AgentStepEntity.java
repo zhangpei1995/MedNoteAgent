@@ -9,7 +9,7 @@ public class AgentStepEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String sessionId;
+    private Long agentRunId;
     private Integer stepOrder;
     private String stage;
     private String eventType;
@@ -26,12 +26,12 @@ public class AgentStepEntity {
         this.id = id;
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public Long getAgentRunId() {
+        return agentRunId;
     }
 
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+    public void setAgentRunId(Long agentRunId) {
+        this.agentRunId = agentRunId;
     }
 
     public Integer getStepOrder() {

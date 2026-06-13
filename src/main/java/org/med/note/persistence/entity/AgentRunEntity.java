@@ -1,12 +1,14 @@
 package org.med.note.persistence.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("agent_runs")
 public class AgentRunEntity {
 
-    @TableId
+    @TableId(type = IdType.AUTO)
+    private Long id;
     private String sessionId;
     private String startedAt;
     private String finishedAt;
@@ -14,6 +16,14 @@ public class AgentRunEntity {
     private Integer stepCount;
     private String payloadJson;
     private String createdAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getSessionId() {
         return sessionId;

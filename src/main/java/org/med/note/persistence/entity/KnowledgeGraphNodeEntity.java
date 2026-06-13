@@ -1,12 +1,14 @@
 package org.med.note.persistence.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("knowledge_graph_nodes")
 public class KnowledgeGraphNodeEntity {
 
-    @TableId
+    @TableId(type = IdType.AUTO)
+    private Long id;
     private String nodeId;
     private String nodeType;
     private String name;
@@ -15,6 +17,14 @@ public class KnowledgeGraphNodeEntity {
     private String propertiesJson;
     private String createdAt;
     private String updatedAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getNodeId() {
         return nodeId;

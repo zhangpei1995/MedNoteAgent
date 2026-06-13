@@ -1,15 +1,16 @@
 package org.med.note.persistence.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("knowledge_graph_edges")
 public class KnowledgeGraphEdgeEntity {
 
-    @TableId
-    private String edgeId;
-    private String sourceNodeId;
-    private String targetNodeId;
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    private Long sourceNodeRowId;
+    private Long targetNodeRowId;
     private String edgeType;
     private Double weight;
     private String evidenceId;
@@ -17,28 +18,28 @@ public class KnowledgeGraphEdgeEntity {
     private String createdAt;
     private String updatedAt;
 
-    public String getEdgeId() {
-        return edgeId;
+    public Long getId() {
+        return id;
     }
 
-    public void setEdgeId(String edgeId) {
-        this.edgeId = edgeId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public String getSourceNodeId() {
-        return sourceNodeId;
+    public Long getSourceNodeRowId() {
+        return sourceNodeRowId;
     }
 
-    public void setSourceNodeId(String sourceNodeId) {
-        this.sourceNodeId = sourceNodeId;
+    public void setSourceNodeRowId(Long sourceNodeRowId) {
+        this.sourceNodeRowId = sourceNodeRowId;
     }
 
-    public String getTargetNodeId() {
-        return targetNodeId;
+    public Long getTargetNodeRowId() {
+        return targetNodeRowId;
     }
 
-    public void setTargetNodeId(String targetNodeId) {
-        this.targetNodeId = targetNodeId;
+    public void setTargetNodeRowId(Long targetNodeRowId) {
+        this.targetNodeRowId = targetNodeRowId;
     }
 
     public String getEdgeType() {

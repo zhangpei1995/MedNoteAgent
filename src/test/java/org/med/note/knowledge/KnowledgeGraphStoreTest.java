@@ -38,7 +38,7 @@ class KnowledgeGraphStoreTest {
     void writerShouldUpsertNodeAndEdge() {
         KnowledgeGraphNode drug = KnowledgeGraphNode.of("drug:test", "DRUG", "测试药品", "测试药品", "test-source", Map.of());
         KnowledgeGraphNode section = KnowledgeGraphNode.of("section:test", "INSTRUCTION_SECTION", "注意事项", "测试药品:注意事项", "test-source", Map.of());
-        KnowledgeGraphEdge edge = KnowledgeGraphEdge.of("drug:test->HAS_SECTION->section:test", drug.id(), section.id(), "HAS_SECTION", 1.0, "test-source", Map.of());
+        KnowledgeGraphEdge edge = KnowledgeGraphEdge.of(drug.id(), section.id(), "HAS_SECTION", 1.0, "test-source", Map.of());
 
         graphStore.upsertSubgraph(List.of(drug, section), List.of(edge));
 

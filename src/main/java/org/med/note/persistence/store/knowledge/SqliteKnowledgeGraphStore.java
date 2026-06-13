@@ -45,7 +45,7 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
     @Override
     @Transactional
     public synchronized KnowledgeGraphNode upsertNode(KnowledgeGraphNode node) {
-        KnowledgeGraphNodeEntity existing = nodeMapper.selectById(node.id());
+        KnowledgeGraphNodeEntity existing = findNodeEntity(node.id()).orElse(null);
         KnowledgeGraphNodeEntity entity = toNodeEntity(node, existing);
         if (existing == null) {
             nodeMapper.insert(entity);
@@ -58,8 +58,13 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
     @Override
     @Transactional
     public synchronized KnowledgeGraphEdge upsertEdge(KnowledgeGraphEdge edge) {
-        KnowledgeGraphEdgeEntity existing = edgeMapper.selectById(edge.id());
-        KnowledgeGraphEdgeEntity entity = toEdgeEntity(edge, existing);
+        KnowledgeGraphNodeEntity sourceNode = findNodeEntity(edge.sourceNodeId())
+                .orElseThrow(() -> new IllegalArgumentException("知识图谱边缺少来源节点: " + edge.sourceNodeId()));
+        KnowledgeGraphNodeEntity targetNode = findNodeEntity(edge.targetNodeId())
+                .orElseThrow(() -> new IllegalArgumentException("知识图谱边缺少目标节点: " + edge.targetNodeId()));
+        KnowledgeGraphEdgeEntity existing = findEdgeEntity(sourceNode.getId(), targetNode.getId(), edge.type(), edge.evidenceId())
+                .orElse(null);
+        KnowledgeGraphEdgeEntity entity = toEdgeEntity(edge, sourceNode, targetNode, existing);
         if (existing == null) {
             edgeMapper.insert(entity);
         } else {
@@ -84,8 +89,7 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
         if (nodeId == null || nodeId.isBlank()) {
             return Optional.empty();
         }
-        KnowledgeGraphNodeEntity entity = nodeMapper.selectById(nodeId);
-        return entity == null ? Optional.empty() : Optional.of(toNode(entity));
+        return findNodeEntity(nodeId).map(this::toNode);
     }
 
     @Override
@@ -109,8 +113,12 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
         if (sourceNodeId == null || sourceNodeId.isBlank()) {
             return List.of();
         }
+        Optional<KnowledgeGraphNodeEntity> sourceNode = findNodeEntity(sourceNodeId);
+        if (sourceNode.isEmpty()) {
+            return List.of();
+        }
         LambdaQueryWrapper<KnowledgeGraphEdgeEntity> query = new LambdaQueryWrapper<KnowledgeGraphEdgeEntity>()
-                .eq(KnowledgeGraphEdgeEntity::getSourceNodeId, sourceNodeId)
+                .eq(KnowledgeGraphEdgeEntity::getSourceNodeRowId, sourceNode.get().getId())
                 .orderByDesc(KnowledgeGraphEdgeEntity::getWeight)
                 .orderByDesc(KnowledgeGraphEdgeEntity::getUpdatedAt)
                 .last("LIMIT " + Math.max(1, limit));
@@ -125,8 +133,12 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
         if (targetNodeId == null || targetNodeId.isBlank()) {
             return List.of();
         }
+        Optional<KnowledgeGraphNodeEntity> targetNode = findNodeEntity(targetNodeId);
+        if (targetNode.isEmpty()) {
+            return List.of();
+        }
         LambdaQueryWrapper<KnowledgeGraphEdgeEntity> query = new LambdaQueryWrapper<KnowledgeGraphEdgeEntity>()
-                .eq(KnowledgeGraphEdgeEntity::getTargetNodeId, targetNodeId)
+                .eq(KnowledgeGraphEdgeEntity::getTargetNodeRowId, targetNode.get().getId())
                 .orderByDesc(KnowledgeGraphEdgeEntity::getWeight)
                 .orderByDesc(KnowledgeGraphEdgeEntity::getUpdatedAt)
                 .last("LIMIT " + Math.max(1, limit));
@@ -143,6 +155,7 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
 
     private KnowledgeGraphNodeEntity toNodeEntity(KnowledgeGraphNode node, KnowledgeGraphNodeEntity existing) {
         KnowledgeGraphNodeEntity entity = new KnowledgeGraphNodeEntity();
+        entity.setId(existing == null ? null : existing.getId());
         entity.setNodeId(node.id());
         entity.setNodeType(node.type());
         entity.setName(node.name());
@@ -154,11 +167,16 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
         return entity;
     }
 
-    private KnowledgeGraphEdgeEntity toEdgeEntity(KnowledgeGraphEdge edge, KnowledgeGraphEdgeEntity existing) {
+    private KnowledgeGraphEdgeEntity toEdgeEntity(
+            KnowledgeGraphEdge edge,
+            KnowledgeGraphNodeEntity sourceNode,
+            KnowledgeGraphNodeEntity targetNode,
+            KnowledgeGraphEdgeEntity existing
+    ) {
         KnowledgeGraphEdgeEntity entity = new KnowledgeGraphEdgeEntity();
-        entity.setEdgeId(edge.id());
-        entity.setSourceNodeId(edge.sourceNodeId());
-        entity.setTargetNodeId(edge.targetNodeId());
+        entity.setId(existing == null ? null : existing.getId());
+        entity.setSourceNodeRowId(sourceNode.getId());
+        entity.setTargetNodeRowId(targetNode.getId());
         entity.setEdgeType(edge.type());
         entity.setWeight(edge.weight());
         entity.setEvidenceId(edge.evidenceId());
@@ -183,9 +201,8 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
 
     private KnowledgeGraphEdge toEdge(KnowledgeGraphEdgeEntity entity) {
         return new KnowledgeGraphEdge(
-                entity.getEdgeId(),
-                entity.getSourceNodeId(),
-                entity.getTargetNodeId(),
+                resolveNodeId(entity.getSourceNodeRowId()),
+                resolveNodeId(entity.getTargetNodeRowId()),
                 entity.getEdgeType(),
                 entity.getWeight(),
                 entity.getEvidenceId(),
@@ -201,6 +218,29 @@ public class SqliteKnowledgeGraphStore implements KnowledgeGraphStore {
         } catch (JsonProcessingException error) {
             throw new IllegalStateException("序列化知识图谱属性失败", error);
         }
+    }
+
+    private Optional<KnowledgeGraphNodeEntity> findNodeEntity(String nodeId) {
+        return Optional.ofNullable(nodeMapper.selectOne(new LambdaQueryWrapper<KnowledgeGraphNodeEntity>()
+                .eq(KnowledgeGraphNodeEntity::getNodeId, nodeId)
+                .last("LIMIT 1")));
+    }
+
+    private Optional<KnowledgeGraphEdgeEntity> findEdgeEntity(Long sourceNodeRowId, Long targetNodeRowId, String edgeType, String evidenceId) {
+        return Optional.ofNullable(edgeMapper.selectOne(new LambdaQueryWrapper<KnowledgeGraphEdgeEntity>()
+                .eq(KnowledgeGraphEdgeEntity::getSourceNodeRowId, sourceNodeRowId)
+                .eq(KnowledgeGraphEdgeEntity::getTargetNodeRowId, targetNodeRowId)
+                .eq(KnowledgeGraphEdgeEntity::getEdgeType, edgeType)
+                .eq(KnowledgeGraphEdgeEntity::getEvidenceId, evidenceId == null ? "" : evidenceId)
+                .last("LIMIT 1")));
+    }
+
+    private String resolveNodeId(Long nodeRowId) {
+        KnowledgeGraphNodeEntity node = nodeMapper.selectById(nodeRowId);
+        if (node == null) {
+            throw new IllegalStateException("知识图谱边关联了不存在的节点自增 ID: " + nodeRowId);
+        }
+        return node.getNodeId();
     }
 
     private Map<String, Object> readMap(String value) {

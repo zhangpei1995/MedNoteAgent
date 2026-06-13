@@ -46,19 +46,15 @@ public class KnowledgeGraphBootstrap {
                     "content", evidence.content()
             )));
 
-            edges.add(KnowledgeGraphEdge.of(edgeId(drugNodeId, sectionNodeId, "HAS_SECTION"), drugNodeId, sectionNodeId, "HAS_SECTION", 1.0, evidence.id(), Map.of()));
-            edges.add(KnowledgeGraphEdge.of(edgeId(sectionNodeId, evidenceNodeId, "HAS_EVIDENCE"), sectionNodeId, evidenceNodeId, "HAS_EVIDENCE", 1.0, evidence.id(), Map.of()));
-            edges.add(KnowledgeGraphEdge.of(edgeId(evidenceNodeId, drugNodeId, "EVIDENCE_OF"), evidenceNodeId, drugNodeId, "EVIDENCE_OF", 1.0, evidence.id(), Map.of()));
+            edges.add(KnowledgeGraphEdge.of(drugNodeId, sectionNodeId, "HAS_SECTION", 1.0, evidence.id(), Map.of()));
+            edges.add(KnowledgeGraphEdge.of(sectionNodeId, evidenceNodeId, "HAS_EVIDENCE", 1.0, evidence.id(), Map.of()));
+            edges.add(KnowledgeGraphEdge.of(evidenceNodeId, drugNodeId, "EVIDENCE_OF", 1.0, evidence.id(), Map.of()));
         }
         graphStore.upsertSubgraph(nodes, edges);
     }
 
     private String nodeId(String type, String value) {
         return type + ":" + normalize(value);
-    }
-
-    private String edgeId(String sourceNodeId, String targetNodeId, String type) {
-        return sourceNodeId + "->" + type + "->" + targetNodeId;
     }
 
     private String normalize(String value) {

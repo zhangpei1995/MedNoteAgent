@@ -9,7 +9,7 @@ public class AgentToolCallEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String sessionId;
+    private Long agentRunId;
     private Integer toolOrder;
     private String toolName;
     private String phase;
@@ -33,12 +33,12 @@ public class AgentToolCallEntity {
         this.id = id;
     }
 
-    public String getSessionId() {
-        return sessionId;
+    public Long getAgentRunId() {
+        return agentRunId;
     }
 
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
+    public void setAgentRunId(Long agentRunId) {
+        this.agentRunId = agentRunId;
     }
 
     public Integer getToolOrder() {

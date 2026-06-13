@@ -7,7 +7,6 @@ import java.util.Map;
  * Directed relationship between two graph nodes.
  */
 public record KnowledgeGraphEdge(
-        String id,
         String sourceNodeId,
         String targetNodeId,
         String type,
@@ -18,7 +17,6 @@ public record KnowledgeGraphEdge(
         Instant updatedAt
 ) {
     public static KnowledgeGraphEdge of(
-            String id,
             String sourceNodeId,
             String targetNodeId,
             String type,
@@ -28,7 +26,6 @@ public record KnowledgeGraphEdge(
     ) {
         Instant now = Instant.now();
         return new KnowledgeGraphEdge(
-                id,
                 sourceNodeId,
                 targetNodeId,
                 type,

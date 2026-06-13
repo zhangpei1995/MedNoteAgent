@@ -1,8 +1,7 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentStep;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -12,9 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Non-persistent run store for local demo and troubleshooting endpoints.
+ * Non-persistent run store for local troubleshooting endpoints.
  */
-@Component
 public class InMemoryAgentRunStore implements AgentRunStore {
 
     private final int maxRecords;

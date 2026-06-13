@@ -1,6 +1,6 @@
 package org.med.note.agent.tool;
 
-import org.med.note.domain.EvidenceChunk;
+import org.med.note.knowledge.evidence.EvidenceChunk;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +11,7 @@ import java.util.Map;
 public record ToolResult(
         String toolName,
         String summary,
+        String topic,
         List<String> taskKeywords,
         String intent,
         String rewrittenQuery,
@@ -24,6 +25,7 @@ public record ToolResult(
     public static ToolResult of(
             String toolName,
             String summary,
+            String topic,
             List<String> taskKeywords,
             String intent,
             String rewrittenQuery,
@@ -37,6 +39,7 @@ public record ToolResult(
         return new ToolResult(
                 toolName,
                 summary,
+                topic,
                 safeList(taskKeywords),
                 intent,
                 rewrittenQuery,

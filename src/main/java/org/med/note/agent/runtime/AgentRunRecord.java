@@ -1,6 +1,6 @@
 package org.med.note.agent.runtime;
 
-import org.med.note.dto.AgentStep;
+import org.med.note.agent.api.AgentStep;
 
 import java.time.Instant;
 import java.util.List;

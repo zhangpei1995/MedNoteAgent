@@ -7,6 +7,9 @@ spring:
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
+  datasource:
+    url: jdbc:sqlite:${mednote.agent.store.sqlite.path:data/mednote-agent.db}
+    driver-class-name: org.sqlite.JDBC
 
 springdoc:
   api-docs:
@@ -46,3 +49,8 @@ mednote:
 
     session:
       max-records: 100
+    executor:
+      parallelism: 4
+    store:
+      sqlite:
+        path: data/mednote-agent.db

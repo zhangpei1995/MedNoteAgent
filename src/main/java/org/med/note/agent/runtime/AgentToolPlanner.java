@@ -28,6 +28,35 @@ public class AgentToolPlanner {
     }
 
     public ToolSelectionDecision selectNext(ToolContext context, Set<String> executedToolNames) {
+        ToolSelectionBatch batch = selectNextBatch(context, executedToolNames);
+        if (!batch.hasSelection()) {
+            return new ToolSelectionDecision(
+                    null,
+                    null,
+                    batch.candidateTools(),
+                    batch.unloadedTools(),
+                    batch.skippedTools(),
+                    batch.reason(),
+                    batch.stopReason(),
+                    batch.confidence(),
+                    batch.requiresHumanReview()
+            );
+        }
+        ToolSelectionBatch.SelectedTool firstSelection = batch.selectedTools().get(0);
+        return new ToolSelectionDecision(
+                firstSelection.tool(),
+                firstSelection.descriptor(),
+                batch.candidateTools(),
+                batch.unloadedTools(),
+                batch.skippedTools(),
+                batch.reason(),
+                batch.stopReason(),
+                batch.confidence(),
+                batch.requiresHumanReview()
+        );
+    }
+
+    public ToolSelectionBatch selectNextBatch(ToolContext context, Set<String> executedToolNames) {
         Set<String> unloadedTools = executedToolNames == null ? Set.of() : executedToolNames;
         List<AgentTool> candidates = toolRegistry.rankTools(context, unloadedTools, MAX_CANDIDATES);
         List<String> candidateNames = candidates.stream()
@@ -37,32 +66,69 @@ public class AgentToolPlanner {
         List<String> unloadedToolNames = unloadedTools.stream().sorted().toList();
 
         if (candidates.isEmpty()) {
-            return new ToolSelectionDecision(
-                    null,
-                    null,
+            return new ToolSelectionBatch(
                     List.of(),
+                    candidateNames,
                     unloadedToolNames,
                     skippedTools,
                     "no-candidate-after-dynamic-pruning",
                     "no_more_candidate_tools",
                     0.0,
+                    false,
                     false
             );
         }
 
-        AgentTool selectedTool = candidates.get(0);
-        AgentToolDescriptor selectedDescriptor = toolRegistry.describe(selectedTool);
-        return new ToolSelectionDecision(
-                selectedTool,
-                selectedDescriptor,
+        List<ToolSelectionBatch.SelectedTool> readyTools = candidates.stream()
+                .map(tool -> new ToolSelectionBatch.SelectedTool(tool, toolRegistry.describe(tool)))
+                .filter(selection -> dependenciesSatisfied(selection.descriptor(), unloadedTools))
+                .toList();
+        if (readyTools.isEmpty()) {
+            return new ToolSelectionBatch(
+                    List.of(),
+                    candidateNames,
+                    unloadedToolNames,
+                    skippedTools,
+                    "candidate-tools-waiting-for-dependencies",
+                    "waiting_for_dependencies",
+                    0.0,
+                    false,
+                    false
+            );
+        }
+
+        ToolSelectionBatch.SelectedTool firstSelection = readyTools.get(0);
+        List<ToolSelectionBatch.SelectedTool> selectedTools = firstSelection.descriptor().parallelizable()
+                ? readyTools.stream()
+                .filter(selection -> selection.descriptor().parallelizable())
+                .filter(selection -> canShareBatch(firstSelection.descriptor(), selection.descriptor()))
+                .toList()
+                : List.of(firstSelection);
+        return new ToolSelectionBatch(
+                selectedTools,
                 candidateNames,
                 unloadedToolNames,
                 skippedTools,
-                "dynamic-rerank-after-context-update",
+                selectedTools.size() > 1 ? "dynamic-rerank-ready-parallel-batch" : "dynamic-rerank-after-context-update",
                 "continue",
-                confidence(context, selectedDescriptor),
-                requiresHumanReview(context, selectedDescriptor)
+                selectedTools.stream()
+                        .mapToDouble(selection -> confidence(context, selection.descriptor()))
+                        .average()
+                        .orElse(0.0),
+                selectedTools.stream().anyMatch(selection -> requiresHumanReview(context, selection.descriptor())),
+                selectedTools.size() > 1
         );
+    }
+
+    private boolean dependenciesSatisfied(AgentToolDescriptor descriptor, Set<String> executedToolNames) {
+        Set<String> executed = executedToolNames == null ? Set.of() : executedToolNames;
+        return executed.containsAll(descriptor.dependsOn());
+    }
+
+    private boolean canShareBatch(AgentToolDescriptor firstDescriptor, AgentToolDescriptor candidateDescriptor) {
+        return candidateDescriptor.order() >= firstDescriptor.order()
+                && !candidateDescriptor.dependsOn().contains(firstDescriptor.name())
+                && !firstDescriptor.dependsOn().contains(candidateDescriptor.name());
     }
 
     private double confidence(ToolContext context, AgentToolDescriptor selectedDescriptor) {

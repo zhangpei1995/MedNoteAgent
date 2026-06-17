@@ -54,7 +54,7 @@ public class MedicalAnswerGenerator implements AnswerGenerator {
 
     private String generateTemplateAnswer(String question, String riskLevel, List<EvidenceChunk> evidence) {
         if (evidence.isEmpty()) {
-            return "未在 mock 知识库中检索到足够证据，暂不能给出基于说明书的回答。请补充药品名称或具体章节。";
+            return "未在本地知识库中检索到足够证据，暂不能给出基于说明书的回答。请补充药品名称或具体章节。";
         }
 
         String conclusion = evidence.stream()
@@ -69,7 +69,7 @@ public class MedicalAnswerGenerator implements AnswerGenerator {
         };
 
         return """
-                结论：针对“%s”，mock 知识库提示如下。
+                结论：针对“%s”，本地知识库提示如下。
                 %s
 
                 依据：已引用 %d 条说明书证据，主要来自 %s。

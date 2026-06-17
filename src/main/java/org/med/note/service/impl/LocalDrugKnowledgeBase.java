@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Service
-public class MockDrugKnowledgeBase implements EvidenceRetriever {
+public class LocalDrugKnowledgeBase implements EvidenceRetriever {
 
     private static final List<EvidenceChunk> MOCK_EVIDENCE = List.of(
             new EvidenceChunk(

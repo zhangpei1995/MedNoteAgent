@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Demo-only request understanding service used by the planning tool.
+ * Rule-based request understanding service for the local agent pipeline.
  */
 @Service
-public class DemoRequestPlanner implements RequestPlanner {
+public class RuleBasedRequestPlanner implements RequestPlanner {
 
     private final int maxKeywords;
 
-    public DemoRequestPlanner(@Value("${mednote.agent.keyword.max-keywords:12}") int maxKeywords) {
+    public RuleBasedRequestPlanner(@Value("${mednote.agent.keyword.max-keywords:12}") int maxKeywords) {
         this.maxKeywords = maxKeywords;
     }
 

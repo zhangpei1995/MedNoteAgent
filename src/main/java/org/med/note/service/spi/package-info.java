@@ -1,4 +1,4 @@
 /**
- * Replaceable service interfaces used by agent tools.
+ * Replaceable service interfaces used by the agent pipeline.
  */
 package org.med.note.service.spi;

@@ -16,7 +16,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("MedNoteAgent API")
-                        .description("医学说明书结构化和 demo agent 在线调试接口")
+                        .description("药品说明书知识管理与医学问答 API")
                         .version("v1"))
                 .servers(List.of(new Server().url("/").description("Current server")));
     }

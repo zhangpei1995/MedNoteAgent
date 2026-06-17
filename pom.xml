@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>MedNoteAgent</name>
-    <description>Med note extraction and demo agent service</description>
+    <description>Medication instruction knowledge and question-answering agent service</description>
 
     <properties>
         <java.version>17</java.version>

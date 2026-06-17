@@ -27,22 +27,10 @@ knife4j:
     enable-footer: false
 
 mednote:
+  llm:
+    dashscope:
+      enabled: false
+      model: qwen-max
   agent:
     keyword:
       max-keywords: 12
-      small-model:
-        provider: dashscope
-        model: qwen-turbo
-        temperature: 0.1
-        response-format: json_object
-
-    intent:
-      small-model:
-        provider: dashscope
-        model: qwen-turbo
-        temperature: 0.1
-        response-format: json_object
-        timeout-ms: 800
-
-    session:
-      max-records: 100

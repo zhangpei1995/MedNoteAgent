@@ -24,16 +24,10 @@ import java.util.List;
 @Component
 public class QianwenClient {
 
-    // ==================== 全局配置项（统一维护，方便修改） ====================
     /**
      * 接口地址
      */
     private static final String API_URL = "https://dashscope.aliyuncs.com/api/v1";
-    /**
-     * 默认模型
-     */
-    private static final String DEFAULT_MODEL = "qwen-max";
-    // 初始化客户端实例（单例复用，避免重复创建连接）
     private static final Generation GENERATION_CLIENT;
 
     static {
@@ -42,16 +36,19 @@ public class QianwenClient {
 
     private final String apiKey;
     private final String model;
+    private final boolean enabled;
 
     public QianwenClient(
-            @Value("${mednote.llm.dashscope.model:qwen-max}") String model
+            @Value("${mednote.llm.dashscope.model:qwen-max}") String model,
+            @Value("${mednote.llm.dashscope.enabled:false}") boolean enabled
     ) {
         this.apiKey = DotenvConfig.getQwenApiKey();
         this.model = model;
+        this.enabled = enabled;
     }
 
     public boolean isConfigured() {
-        return apiKey != null && !apiKey.isBlank();
+        return enabled && apiKey != null && !apiKey.isBlank();
     }
 
     public String chatWithConfiguredModel(String systemPrompt, String userContent)

@@ -10,7 +10,8 @@ docs/
 ├── requirements/
 │   └── project-requirements.md
 ├── guides/
-│   └── agent-handbook.md
+│   ├── agent-handbook.md
+│   └── development-conventions.md
 └── reference/
     └── drug-instructions/
         ├── 二冬汤颗粒（CXZS2500013）说明书.pdf
@@ -21,10 +22,11 @@ docs/
 
 1. [Project Requirements](requirements/project-requirements.md)
 2. [Agent Handbook](guides/agent-handbook.md)
+3. [Development Conventions](guides/development-conventions.md)
 
 ## Agent 执行约定
 
-后续 Agent 或开发者执行任务时，应先理解边界，再提交方案，最后实施和同步文档。根目录 [AGENTS.md](../AGENTS.md) 是最高频入口，[Agent 协作手册](guides/agent-handbook.md) 提供更完整的协作规范。
+后续 Agent 或开发者执行任务时，应先理解边界，再提交方案，最后实施和同步文档。根目录 [AGENTS.md](../AGENTS.md) 是最高频入口，[Agent 协作手册](guides/agent-handbook.md) 和 [工程开发约定](guides/development-conventions.md) 提供更完整的协作与工程规范。
 
 ### 标准流程
 
@@ -57,6 +59,7 @@ docs/
 | --- | --- |
 | [项目需求](requirements/project-requirements.md) | 定义项目目标、功能范围、风险和验收标准。 |
 | [Agent 协作手册](guides/agent-handbook.md) | 约束 Agent 如何检索项目、控制改动范围、保持模块职责和扩展边界。 |
+| [工程开发约定](guides/development-conventions.md) | 约束 Spring Boot 3、SQLite、MyBatis Plus、`hutool-all`、删除清理和文档对齐规则。 |
 
 ## 参考资料
 

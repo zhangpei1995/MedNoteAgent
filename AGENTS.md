@@ -1,6 +1,22 @@
 # Agent Instructions
 
-本项目的 Agent 协作规范见 [docs/guides/agent-handbook.md](docs/guides/agent-handbook.md)。
+本项目的 Agent 协作规范见 [docs/guides/agent-handbook.md](docs/guides/agent-handbook.md)，工程技术约定见 [docs/guides/development-conventions.md](docs/guides/development-conventions.md)。
+
+## P0 必读与硬约束
+
+执行任务前必须先阅读并遵守：
+
+1. 本文件的 P0 规则、任务流程和模块边界。
+2. [Agent 协作手册](docs/guides/agent-handbook.md)。
+3. [工程开发约定](docs/guides/development-conventions.md)。
+
+P0 关注点：
+
+- 先认真分析当前要做什么、为什么做、怎样才算完成，再考虑实现；不要为了显得“专业”而堆兼容层、双路径、兜底分支或过度抽象。
+- 新功能默认按当前目标设计，不兼容未被需求明确要求的历史代码、旧写法或旧行为。
+- 代码不得冗余。删除老功能或核心代码时，必须 Review 调用关系、残留文件、残留配置、残留测试和文档引用，并清理干净。
+- 项目技术栈固定为 Spring Boot 3；底层存储暂时使用 SQLite；DAO 层使用 MyBatis Plus；常用工具统一使用 `hutool-all`。不得随意引入替代框架或重复能力库。
+- 涉及 README、目录树、推荐阅读顺序、文档索引或链接清单时，必须用真实文件列表反向校验，禁止保留不存在的文件说明。
 
 ## 任务执行流程
 
@@ -24,6 +40,8 @@
    - 如果执行中发现计划不适用，先说明变化点并更新方案，不静默扩大范围。
 4. **实施与验证**
    - 只改当前需求必要的文件，不做无关重构。
+   - 删除老功能、旧入口或核心代码时，使用 CodeGraph 查看影响范围，并用 `rg` 检查是否还有残留调用、配置、测试、文档和资源文件。
+   - 清理应完整，不留下无人使用的类、方法、参数、配置项、依赖、文档条目或测试夹具。
    - 运行与改动范围匹配的测试或检查。
 5. **对齐文档、代码和 CodeGraph**
    - 执行后同步更新相关文档、注释、接口契约或示例，保证文档与代码一致。

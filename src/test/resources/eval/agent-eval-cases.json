@@ -5,7 +5,8 @@
     {
       "id": "eval-cmxf-contraindication-risk",
       "request": {
-        "question": "对菖麻熄风颗粒成分过敏的人能不能服用？请说明禁忌和风险。"
+        "topic": "菖麻熄风颗粒用药安全",
+        "input": "对菖麻熄风颗粒成分过敏的人能不能服用？请说明禁忌和风险。"
       },
       "expected": {
         "mustSelectTools": ["request_planning", "drug_knowledge_search", "medical_risk_assessment", "answer_generation"],

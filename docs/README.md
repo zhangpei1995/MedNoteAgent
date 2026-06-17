@@ -1,63 +1,73 @@
 # MedNoteAgent 文档中心
 
-本目录是 MedNoteAgent 项目需求、最新架构设计、开发规范和参考资料的统一入口。文档职责应像代码职责一样清晰：入口文档只做索引，设计文档说明边界和决策，规范文档约束日常开发。
+本目录是 MedNoteAgent 项目文档、设计说明、开发指南和原始参考资料的统一入口。
 
-## 当前文档结构
+## 目录结构
 
 ```text
 docs/
 ├── README.md
 ├── requirements/
 │   └── project-requirements.md
-├── architecture/
-│   └── business-module-structure-design.md
 ├── guides/
-│   ├── development-guide.md
-│   └── codegraph-guide.md
+│   ├── agent-handbook.md
+│   └── development-conventions.md
 └── reference/
     └── drug-instructions/
+        ├── 二冬汤颗粒（CXZS2500013）说明书.pdf
+        └── 菖麻熄风颗粒（CXZS2500020）说明书.pdf
 ```
 
-## 推荐阅读
+## 推荐阅读顺序
 
-### 必读主线
+1. [Project Requirements](requirements/project-requirements.md)
+2. [Agent Handbook](guides/agent-handbook.md)
+3. [Development Conventions](guides/development-conventions.md)
 
-| 顺序 | 文档 | 作用 |
-| --- | --- | --- |
-| 1 | [项目需求](requirements/project-requirements.md) | 明确项目目标、功能范围、医学安全边界和验收标准。 |
-| 2 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) | 明确按业务上下文组织代码、仅存储层横向独立的目标结构。 |
-| 3 | [开发规范](guides/development-guide.md) | 明确包结构、接口设计、SQLite + MyBatis Plus 存储层规范和文档规范。 |
+## Agent 执行约定
 
-### 按任务阅读
+后续 Agent 或开发者执行任务时，应先理解边界，再提交方案，最后实施和同步文档。根目录 [AGENTS.md](../AGENTS.md) 是最高频入口，[Agent 协作手册](guides/agent-handbook.md) 和 [工程开发约定](guides/development-conventions.md) 提供更完整的协作与工程规范。
 
-| 场景 | 继续阅读 |
+### 标准流程
+
+1. **先用 CodeGraph 建立上下文**
+   - 使用 `codegraph query`、`codegraph callers`、`codegraph callees`、`codegraph impact`、`codegraph affected`、`codegraph files` 等命令了解相关符号、调用关系、影响范围和模块边界。
+   - 如果项目还没有索引，使用 `codegraph init -i` 初始化生成。
+   - 查看索引状态使用 `codegraph status`。
+   - 查看更多命令说明使用 `codegraph --help` 或 `codegraph help <command>`。
+2. **再用精确检索补充**
+   - CodeGraph 收敛范围后，再用 `rg`、`rg --files` 查找关键词、配置项、测试或文档。
+   - 避免无目的横向扫描项目。
+3. **先生成计划方案**
+   - 计划应说明目标、涉及模块、设计模式或扩展方式、改动文件、验证方式和风险。
+   - 计划经过 Review 或用户确认后再执行。
+4. **执行后保持一致**
+   - 代码、配置、测试、文档需要同步对齐。
+   - 完成后运行 `codegraph sync` 更新索引。
+   - 如果同步前发现索引缺失或异常，先用 `codegraph status` 判断状态，再按 help 指引处理。
+
+### 设计要求
+
+- 可扩展逻辑优先使用接口、策略、工厂、适配器、模板方法或注册机制承载变化点。
+- 当“同一件事情可以有多种实现”时，先抽象能力契约，再接入具体实现。
+- 类、方法和参数要写清楚做什么、什么时候用、怎么用；必要时通过 JavaDoc 或注释说明入参、返回值、约束和扩展方式。
+- 不把业务逻辑堆进 Controller、Agent 编排器或单个工具类；保持 `controller`、`agent`、`agent.tool`、`agent.runtime`、`service.spi`、`service.impl`、`domain`、`dto`、`config` 的职责分离。
+
+## 文档索引
+
+| 文档 | 用途 |
 | --- | --- |
-| 调整项目目录、包职责或业务模块边界 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) |
-| 修改 Agent、知识图谱、证据召回、PDF 入库或存储边界 | [业务模块化目录结构设计](architecture/business-module-structure-design.md) |
-| 使用代码结构索引和影响分析 | [CodeGraph 使用指南](guides/codegraph-guide.md) |
-
-## 文档职责规则
-
-| 文档类型 | 目录 | 写作要求 |
-| --- | --- | --- |
-| 需求、范围、验收标准 | `docs/requirements/` | 说明要解决什么问题，不展开实现细节。 |
-| 架构设计 | `docs/architecture/` | 只保留当前最新设计，说明组件职责、边界、接口和关键决策。 |
-| 开发规范、操作指南 | `docs/guides/` | 说明稳定规则和操作流程。 |
-| 原始资料、样本文档 | `docs/reference/` | 保存外部资料，不混入设计说明。 |
-
-新增稳定 Markdown 文档后，必须同步更新本文档。文档文件名使用小写英文和中划线，例如 `business-module-structure-design.md`。
-
-## 当前技术决策
-
-- 存储方案使用 SQLite。
-- 存储层框架使用 MyBatis Plus。
-- Agent 运行记录和知识图谱均应通过接口访问存储，业务层不直接操作 Mapper。
-- 项目不是 demo；功能可以简单，但命名、接口和文档必须按正式开发组织。
-- 代码按业务上下文收敛；除数据存储层独立管理外，Controller、DTO、应用服务、领域接口和业务实现优先放入所属业务模块。
-- Agent 和 Agent 专属能力优先收敛在 `agent` 相关目录；知识图谱、证据片段和说明书入库能力优先收敛在 `knowledge`。
-- Agent 问答外部入口只接收用户自然语言问题；任务主题、检索范围和风险信号由内部规划链路生成。
-- Entity、Mapper、SQLite Store 实现和 schema 初始化集中在 `persistence`；业务层不直接操作 Mapper。
+| [项目需求](requirements/project-requirements.md) | 定义项目目标、功能范围、风险和验收标准。 |
+| [Agent 协作手册](guides/agent-handbook.md) | 约束 Agent 如何检索项目、控制改动范围、保持模块职责和扩展边界。 |
+| [工程开发约定](guides/development-conventions.md) | 约束 Spring Boot 3、SQLite、MyBatis Plus、`hutool-all`、删除清理和文档对齐规则。 |
 
 ## 参考资料
 
-药品说明书 PDF 等原始资料统一放在 [reference/drug-instructions](reference/drug-instructions/) 下。运行生成数据放入 `data/`，不要和文档混放。
+药品说明书 PDF 等原始资料统一放在 [reference/drug-instructions](reference/drug-instructions/) 下。原始资料与设计文档分开管理，方便后续替换、版本化或批量导入。
+
+## 命名规则
+
+- 新增 Markdown 文档统一使用小写英文和中划线命名。
+- 稳定项目文档放入对应分类目录，不放在仓库根目录。
+- 原始资料放入 `docs/reference/`。
+- 运行生成数据后续放入 `data/`，不要和文档混放。

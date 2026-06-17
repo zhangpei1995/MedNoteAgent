@@ -1,80 +1,78 @@
-# MedNoteAgent Agent Instructions
+# Agent Instructions
 
-本文件是 agent 进入本项目后的第一入口。执行代码开发、重构、评审、排障或设计落地前，必须先阅读本文件，并按索引继续读取相关文档。
+本项目的 Agent 协作规范见 [docs/guides/agent-handbook.md](docs/guides/agent-handbook.md)，工程技术约定见 [docs/guides/development-conventions.md](docs/guides/development-conventions.md)。
 
-## Required Reading
+## P0 必读与硬约束
 
-所有代码相关任务必须先阅读：
+执行任务前必须先阅读并遵守：
 
-- `docs/guides/development-guide.md`
-- `docs/guides/codegraph-guide.md`
-- `docs/README.md`
+1. 本文件的 P0 规则、任务流程和模块边界。
+2. [Agent 协作手册](docs/guides/agent-handbook.md)。
+3. [工程开发约定](docs/guides/development-conventions.md)。
 
-如果任务涉及需求、架构、PDF 抽取、知识图谱、并发或存储，还必须按 `docs/README.md` 的索引读取对应文档。
+P0 关注点：
 
-## Documentation Index Rule
+- 先认真分析当前要做什么、为什么做、怎样才算完成，再考虑实现；不要为了显得“专业”而堆兼容层、双路径、兜底分支或过度抽象。
+- 新功能默认按当前目标设计，不兼容未被需求明确要求的历史代码、旧写法或旧行为。
+- 代码不得冗余。删除老功能或核心代码时，必须 Review 调用关系、残留文件、残留配置、残留测试和文档引用，并清理干净。
+- 项目技术栈固定为 Spring Boot 3；底层存储暂时使用 SQLite；DAO 层使用 MyBatis Plus；常用工具统一使用 `hutool-all`。不得随意引入替代框架或重复能力库。
+- 涉及 README、目录树、推荐阅读顺序、文档索引或链接清单时，必须用真实文件列表反向校验，禁止保留不存在的文件说明。
 
-项目文档统一放在 `docs/` 下，并通过 `docs/README.md` 建立索引。
+## 任务执行流程
 
-新增或导入文档时遵循：
+执行任何代码、配置或文档改动前，先按以下流程推进：
 
-- 需求和验收标准放入 `docs/requirements/`。
-- 架构、模块设计和技术方案放入 `docs/architecture/`。该目录只保留当前最新设计。
-- 编码规范、操作指南、开发流程放入 `docs/guides/`。
-- 原始资料、外部资料和样本文档放入 `docs/reference/`。
-- 新增稳定 Markdown 文档后，必须更新 `docs/README.md` 的目录结构、推荐阅读顺序或文档索引。
-- 文档文件名使用小写英文和中划线，例如 `business-module-structure-design.md`。
+1. **CodeGraph 理解上下文**
+   - 先用 `codegraph` 定位相关符号、调用关系、影响范围和模块边界。
+   - 常用命令包括 `codegraph query`、`codegraph callers`、`codegraph callees`、`codegraph impact`、`codegraph affected`、`codegraph files`、`codegraph status`。
+   - 如果本地还没有索引，使用 `codegraph init -i` 初始化生成索引。
+   - 需要了解更多用法时，使用 `codegraph --help` 或 `codegraph help <command>`。
+2. **精确补充检索**
+   - 在 CodeGraph 已经收敛范围后，再用 `rg`、`rg --files` 做关键词、配置项或测试文件的精确补充。
+   - 修改 README、目录树、推荐阅读顺序、文档索引或任何链接清单前，必须先用 `rg --files` 或等价命令核对真实存在的文件。
+   - 文档中不得保留不存在文件、旧路径或未经验证的占位链接；如果资料已不存在，应删除说明或明确标注为待创建任务。
+   - 不大量扫描项目，不凭感觉横向打开无关文件。
+3. **先出计划，Review 后执行**
+   - 编码前先生成简明计划，说明目标、涉及模块、设计方案、测试/验收方式和可能风险。
+   - 计划必须先回答“当前到底要做什么、为什么要做、怎样才算达成目的”，再讨论实现方式。
+   - 新功能默认按当前目标设计，不为了兼容历史代码、旧写法或未被需求要求的旧行为而增加分支、适配层或保留包袱。
+   - 计划经过 Review 或用户确认后再实施。
+   - 如果执行中发现计划不适用，先说明变化点并更新方案，不静默扩大范围。
+4. **实施与验证**
+   - 只改当前需求必要的文件，不做无关重构。
+   - 删除老功能、旧入口或核心代码时，使用 CodeGraph 查看影响范围，并用 `rg` 检查是否还有残留调用、配置、测试、文档和资源文件。
+   - 清理应完整，不留下无人使用的类、方法、参数、配置项、依赖、文档条目或测试夹具。
+   - 运行与改动范围匹配的测试或检查。
+5. **对齐文档、代码和 CodeGraph**
+   - 执行后同步更新相关文档、注释、接口契约或示例，保证文档与代码一致。
+   - 涉及文档中心、目录结构、阅读顺序、索引表或交叉引用时，必须反向校验每个条目对应的文件真实存在，避免文档描述超过项目现状。
+   - 改动完成后运行 `codegraph sync` 同步索引。
+   - 如果同步失败或发现索引异常，先查看 `codegraph status` 和对应 `help` 信息，再处理。
 
-## CodeGraph Requirement
+## 架构与模块边界
 
-CodeGraph 是本项目的代码智能索引和知识图谱工具，用于帮助 agent 快速理解代码结构、符号位置、调用关系和变更影响。
+- 保持 `controller`、`agent`、`agent.tool`、`agent.runtime`、`service.spi`、`service.impl`、`domain`、`dto`、`config` 的职责分离。
+- 不在 Controller、Agent 编排器或单个工具类里持续堆业务代码。
+- 不新增万能 `manager`、`helper`、`util` 或长期传递的万能 Map。
+- 如果不确定某个改动应放在哪个模块，先收敛职责和边界，再写代码。
 
-使用 CodeGraph 的目的：
+## 设计与扩展规则
 
-- 在编码前建立全局上下文，避免只看局部文件就做设计或修改。
-- 快速定位类、方法、接口和字段。
-- 分析调用方、被调用方和变更影响范围。
-- 判断修改后需要关注哪些测试或相关模块。
+- 新增能力优先通过接口、工具契约、注册机制、工厂模式或策略模式扩展。
+- 遇到“同一件事情存在多种实现方式”的可扩展逻辑时，先抽象接口或策略契约，再提供具体实现；调用方依赖抽象，不直接绑定某个实现。
+- 代码设计应优先使用合适的设计模式承载变化点，例如策略、工厂、模板方法、适配器、注册表等；不要用长分支或硬编码堆出扩展点。
+- 不为了显得“兼容”或“专业”而引入没有需求支撑的历史兼容层、双路径逻辑、废弃字段、兜底分支或过度抽象。
+- 分析当前正在建设的新能力时，应围绕目标、数据流、边界、失败场景和验收标准设计；只有明确需要承接已有行为时，才考虑兼容策略。
+- 为一次性需求创建抽象前，先确认它是否真的是稳定变化点，避免过度设计。
 
-以下场景必须优先使用 CodeGraph：
+## 代码表达要求
 
-- 开始代码开发、重构、排障或代码评审前。
-- 修改已有类、方法、接口、包结构或核心流程前。
-- 需要判断某个符号的调用关系、依赖关系或影响范围时。
-- 需要根据变更文件推断受影响测试时。
+- 编写类、方法和参数时要清楚表达“做什么、什么时候用、怎么用”。
+- 命名、JavaDoc 或必要注释应让后续开发者能理解职责、入参含义、返回结果和使用约束。
+- 接口说明应写清扩展者需要遵守的契约；实现类说明应写清适用场景和策略差异。
+- 参数名应体现业务含义，不使用长期传递的万能 Map 或含糊对象承载关键语义。
 
-CodeGraph 详细使用方式见：
+## 医学安全要求
 
-- `docs/guides/codegraph-guide.md`
-
-本项目 CodeGraph 索引位置：
-
-- `.codegraph/codegraph.db`
-
-该目录是本地索引目录，不提交到 Git。数据库只作为只读参考，不要手工修改。
-
-常用命令：
-
-```bash
-codegraph status
-codegraph init -i
-codegraph sync
-codegraph query <search>
-codegraph callers <symbol>
-codegraph callees <symbol>
-codegraph impact <symbol>
-codegraph affected <files...>
-```
-
-`codegraph init -i` 用于初始化索引，`codegraph sync` 用于同步上次索引后的变更。即使使用 CodeGraph，也必须结合 `rg`、源码阅读和测试验证。
-
-## Development Rules
-
-- 先用 `rg`、CodeGraph 和源码阅读理解现有结构，再改代码。
-- 新增代码必须符合 `docs/guides/development-guide.md` 中的包职责、命名、业务模块分层和测试规范。
-- 存储方案使用 SQLite，存储层框架使用 MyBatis Plus；业务层不得直接操作 Mapper。
-- 项目按正式开发推进，不以 demo 作为代码或文档边界。
-- 优先遵循现有架构、命名、包结构和测试风格。
-- 不做无关重构。
-- 不回滚用户已有改动。
-- 涉及核心流程、共享接口、跨模块行为时，需要补充或更新测试。
+- 涉及医学问答时必须保留证据引用、风险提示和可追溯性。
+- 不为了回答流畅性删除来源、禁忌、适应证、风险提示或审计信息。

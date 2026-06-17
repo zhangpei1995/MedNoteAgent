@@ -1,8 +1,6 @@
 target/
-data/*.db
-data/*.db-*
-.codegraph/
 .agents/
+.codegraph/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -13,6 +11,7 @@ data/*.db-*
 *.iml
 *.ipr
 .env
+*.db
 
 ### Eclipse ###
 .apt_generated

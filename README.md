@@ -39,6 +39,7 @@ MedNoteAgent 是一个基于 Spring Boot 的药品说明书知识管理与医学
 | [下一阶段任务](docs/architecture/next-stage-tasks.md) | P2/P3 任务拆解、验收标准和实施顺序 |
 | [PDF 抽取与图谱设计](docs/architecture/pdf-extraction-graph-design.md) | PDF 入库、证据片段、图谱节点和关系 |
 | [开发规范](docs/guides/development-guide.md) | 代码组织、包职责、命名和实现规范 |
+| [Agent 协作手册](docs/guides/agent-handbook.md) | Agent 检索、职责边界、扩展方式和自检清单 |
 | [本地 Demo 方案](docs/guides/local-demo-implementation.md) | 本地 demo 范围、存储设计和实现步骤 |
 | [参考资料](docs/reference/drug-instructions/) | 药品说明书原始 PDF |
 

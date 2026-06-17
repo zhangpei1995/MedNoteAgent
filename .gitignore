@@ -10,6 +10,7 @@ target/
 *.iml
 *.ipr
 .env
+*.db
 
 ### Eclipse ###
 .apt_generated

@@ -39,8 +39,18 @@ public class MedNoteAgent {
 
 
         for (int index = 0; index < queue.size(); index++) {
-           // todo
+            String currentInput = queue.get(index);
+            steps.add(new AgentStep(
+                    index + 1,
+                    "loop",
+                    "已接收并规范化输入：" + currentInput
+            ));
         }
+        steps.add(new AgentStep(
+                steps.size() + 1,
+                "final",
+                "最小 Agent 循环完成，等待接入后续医学工具链。"
+        ));
 
         return steps;
     }

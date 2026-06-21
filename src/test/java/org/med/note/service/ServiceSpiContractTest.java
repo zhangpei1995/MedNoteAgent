@@ -15,7 +15,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest(classes = MedNoteAgentApplication.class)
+@SpringBootTest(
+        classes = MedNoteAgentApplication.class,
+        properties = "mednote.llm.agentscope.enabled=false"
+)
 class ServiceSpiContractTest {
 
     @Autowired

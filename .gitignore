@@ -12,6 +12,7 @@ target/
 *.ipr
 .env
 *.db
+*.sqlite
 
 ### Eclipse ###
 .apt_generated

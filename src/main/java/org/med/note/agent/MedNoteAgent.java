@@ -9,9 +9,17 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.protocol.Protocol;
 import org.med.note.llm.QwenProperties;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class MedNoteAgent {
 
     private static final String API_URL = "https://dashscope.aliyuncs.com/api/v1";
+    private static final Path AGENT_PROMPT_PATH = Path.of(
+            "src/main/java/org/med/note/agent/AgentPrompt.md"
+    );
     private static final Generation generation = new Generation(Protocol.HTTP.getValue(), API_URL);
 
     public static String chat(String userInput) {
@@ -19,7 +27,7 @@ public class MedNoteAgent {
 
             Message systemMessage = Message.builder()
                     .role(Role.SYSTEM.getValue())
-                    .content("你是一个严谨、可靠的医学笔记助手。")
+                    .content(readAgentPrompt())
                     .build();
 
             Message userMessage = Message.builder()
@@ -44,6 +52,10 @@ public class MedNoteAgent {
         } catch (Exception e) {
             throw new IllegalStateException("调用 Qwen 模型失败", e);
         }
+    }
+
+    private static String readAgentPrompt() throws IOException {
+        return Files.readString(AGENT_PROMPT_PATH, StandardCharsets.UTF_8);
     }
 
     public static void main(String[] args) {

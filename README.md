@@ -27,13 +27,15 @@ MedNoteAgent 是一个准备重新实现的 Spring Boot 3 医学问答 Agent 项
 '/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn' test
 ```
 
-当前可预期的本地地址：
+当前可预期的访问地址：
 
 | 页面 | 地址 |
 | --- | --- |
-| Scalar API 文档 | http://localhost:8080/docs |
+| Knife4j API 文档 | http://localhost:8080/doc.html |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | OpenAPI JSON | http://localhost:8080/v3/api-docs |
+
+同一网络或服务器公网访问时，将 `localhost` 替换为实际主机 IP 或域名。
 
 > 当前 README 不声明任何业务接口可用。重新实现功能时，以新增代码、测试和文档同步后的状态为准。
 

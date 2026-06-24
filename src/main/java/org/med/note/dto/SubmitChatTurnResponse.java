@@ -1,5 +1,10 @@
 package org.med.note.dto;
 
+import lombok.Data;
+import org.med.note.agent.runtime.ChatTurnSubmission;
+import org.med.note.domain.entity.ChatSession;
+import org.med.note.domain.entity.ChatTurnAudit;
+
 import java.time.LocalDateTime;
 
 /**
@@ -7,6 +12,7 @@ import java.time.LocalDateTime;
  *
  * <p>调用方应保存 sessionId 用于后续连续对话，保存 turnId 用于查询本轮执行情况。</p>
  */
+@Data
 public class SubmitChatTurnResponse {
 
     /**
@@ -34,43 +40,30 @@ public class SubmitChatTurnResponse {
      */
     private LocalDateTime createdAt;
 
-    public String getSessionId() {
-        return sessionId;
+    /**
+     * 将聊天提交运行时结果转换为 API 返回 DTO。
+     *
+     * @param submission 已完成提交编排的运行时结果
+     * @return 前端提交后需要保存和展示的会话、轮次与状态信息
+     */
+    public static SubmitChatTurnResponse of(ChatTurnSubmission submission) {
+        return of(submission.getSession(), submission.getTurnAudit());
     }
 
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public String getTurnId() {
-        return turnId;
-    }
-
-    public void setTurnId(String turnId) {
-        this.turnId = turnId;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getTurnStatus() {
-        return turnStatus;
-    }
-
-    public void setTurnStatus(String turnStatus) {
-        this.turnStatus = turnStatus;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    /**
+     * 根据会话和轮次审计记录构建提交响应。
+     *
+     * @param session 本轮提交所属会话
+     * @param turnAudit 已创建的轮次审计记录
+     * @return 提交响应 DTO
+     */
+    public static SubmitChatTurnResponse of(ChatSession session, ChatTurnAudit turnAudit) {
+        SubmitChatTurnResponse response = new SubmitChatTurnResponse();
+        response.setSessionId(session.getId());
+        response.setTurnId(turnAudit.getId());
+        response.setTitle(session.getTitle());
+        response.setTurnStatus(turnAudit.getStatus());
+        response.setCreatedAt(turnAudit.getCreatedAt());
+        return response;
     }
 }

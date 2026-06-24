@@ -1,12 +1,26 @@
 server:
+  address: 0.0.0.0
   port: 8080
 
 spring:
   application:
     name: med-note-agent
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:./data/mednote-agent.sqlite
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema-sqlite.sql
   jackson:
     time-zone: Asia/Shanghai
     date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
 
 springdoc:
   api-docs:
@@ -46,3 +60,11 @@ mednote:
 
     session:
       max-records: 100
+
+  llm:
+    agentscope:
+      enabled: true
+      provider: dashscope
+      model: qwen-plus
+      workspace: .agentscope/workspace
+      timeout-ms: 10000

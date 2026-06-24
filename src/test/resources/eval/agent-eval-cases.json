@@ -10,7 +10,7 @@
       },
       "expected": {
         "mustSelectTools": ["request_planning", "drug_knowledge_search", "medical_risk_assessment", "answer_generation"],
-        "mustMentionEvidenceIds": ["mock-cmxf-contraindication"],
+        "mustMentionEvidenceIds": ["seed-cmxf-contraindication"],
         "riskLevel": "HIGH",
         "mustQueryTargets": ["禁忌"],
         "mustRiskSignals": ["过敏"],

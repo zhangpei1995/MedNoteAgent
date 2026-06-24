@@ -1,14 +1,18 @@
 package org.med.note.service.spi;
 
 import org.med.note.dto.ChatTurnStatusResponse;
+import org.med.note.dto.ChatSessionSummaryResponse;
+import org.med.note.dto.ChatTurnRecordResponse;
 import org.med.note.dto.SubmitChatTurnRequest;
 import org.med.note.dto.SubmitChatTurnResponse;
 
+import java.util.List;
+
 /**
- * 会话与对话轮次写入服务。
+ * 会话与对话轮次服务。
  *
  * <p>该接口承担 Controller 与持久化层之间的业务契约：决定何时创建会话、何时复用会话、
- * 以及一轮用户输入进入 Agent 前应如何形成可审计记录。</p>
+ * 一轮用户输入进入 Agent 前应如何形成可审计记录，以及前端如何读取会话历史。</p>
  */
 public interface ChatSessionService {
 
@@ -19,6 +23,21 @@ public interface ChatSessionService {
      * @return 会话 ID、轮次 ID、标题和当前轮次初始状态
      */
     SubmitChatTurnResponse submitTurn(SubmitChatTurnRequest request);
+
+    /**
+     * 查询会话列表，按最近更新时间倒序返回。
+     *
+     * @return 会话摘要列表；没有会话时返回空列表
+     */
+    List<ChatSessionSummaryResponse> listSessions();
+
+    /**
+     * 查询指定会话下的全部轮次，按创建时间正序返回。
+     *
+     * @param sessionId 会话 ID，必须对应已存在的会话
+     * @return 会话内全部轮次记录；会话存在但还没有轮次时返回空列表
+     */
+    List<ChatTurnRecordResponse> listSessionTurns(String sessionId);
 
     /**
      * 查询一轮对话的执行状态。

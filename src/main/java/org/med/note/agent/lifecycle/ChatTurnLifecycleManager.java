@@ -4,6 +4,7 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.util.IdUtil;
 import org.med.note.agent.execution.AgentExecutionCommand;
 import org.med.note.agent.execution.AgentExecutionResult;
+import org.med.note.agent.execution.ConversationMessageLoader;
 import org.med.note.dao.ChatTurnAuditMapper;
 import org.med.note.domain.entity.ChatTurnAudit;
 import org.springframework.stereotype.Component;
@@ -25,9 +26,14 @@ public class ChatTurnLifecycleManager {
     private static final String MODEL_NAME_PENDING_AGENT = "pending-agent";
 
     private final ChatTurnAuditMapper chatTurnAuditMapper;
+    private final ConversationMessageLoader conversationMessageLoader;
 
-    public ChatTurnLifecycleManager(ChatTurnAuditMapper chatTurnAuditMapper) {
+    public ChatTurnLifecycleManager(
+            ChatTurnAuditMapper chatTurnAuditMapper,
+            ConversationMessageLoader conversationMessageLoader
+    ) {
         this.chatTurnAuditMapper = chatTurnAuditMapper;
+        this.conversationMessageLoader = conversationMessageLoader;
     }
 
     /**
@@ -66,7 +72,9 @@ public class ChatTurnLifecycleManager {
 
         AgentExecutionCommand command = new AgentExecutionCommand();
         command.setTurnId(turnAudit.getId());
+        command.setSessionId(turnAudit.getSessionId());
         command.setUserInput(turnAudit.getUserInput());
+        command.setConversationMessages(conversationMessageLoader.loadMessages(turnAudit.getId()));
         return command;
     }
 

@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * 基于 DashScope Qwen 模型的医学问答 Agent 执行策略。
@@ -40,15 +41,17 @@ public class DashscopeChatAgentExecutor implements ChatAgentExecutor {
                     .role(Role.SYSTEM.getValue())
                     .content(systemPrompt)
                     .build();
-            Message userMessage = Message.builder()
-                    .role(Role.USER.getValue())
-                    .content(command.getUserInput())
-                    .build();
+            List<Message> messages = CollUtil.newArrayList(systemMessage);
+            command.getConversationMessages().forEach(conversationMessage ->
+                    messages.add(Message.builder()
+                            .role(conversationMessage.getRole())
+                            .content(conversationMessage.getContent())
+                            .build()));
 
             GenerationParam param = GenerationParam.builder()
                     .apiKey(QwenProperties.getApiKey())
                     .model(modelName)
-                    .messages(CollUtil.newArrayList(systemMessage, userMessage))
+                    .messages(messages)
                     .resultFormat(GenerationParam.ResultFormat.MESSAGE)
                     .build();
 

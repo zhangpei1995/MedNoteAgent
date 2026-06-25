@@ -51,6 +51,7 @@ export function useChatWorkspace() {
   const [turnsLoading, setTurnsLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [pollingTurnId, setPollingTurnId] = useState<string | undefined>();
+  const selectedSessionIdRef = useRef<string | undefined>(selectedSessionId);
   const pollingTimerRef = useRef<number | undefined>();
 
   const selectedSession = useMemo(
@@ -89,10 +90,12 @@ export function useChatWorkspace() {
   }, []);
 
   const selectSession = useCallback((sessionId: string) => {
+    selectedSessionIdRef.current = sessionId;
     setSelectedSessionId(sessionId);
   }, []);
 
   const startNewSession = useCallback(() => {
+    selectedSessionIdRef.current = undefined;
     setSelectedSessionId(undefined);
     setTurns([]);
   }, []);
@@ -131,12 +134,14 @@ export function useChatWorkspace() {
 
       setSending(true);
       try {
+        const activeSessionId = selectedSessionIdRef.current;
         const response = await chatApi.submitTurn({
-          sessionId: selectedSessionId,
+          sessionId: activeSessionId,
           userId: 'local-user',
           userInput: trimmedInput,
         });
 
+        selectedSessionIdRef.current = response.sessionId;
         setSelectedSessionId(response.sessionId);
         setTurns((currentTurns) =>
           mergeTurn(currentTurns, {
@@ -158,7 +163,7 @@ export function useChatWorkspace() {
         setSending(false);
       }
     },
-    [pollTurnStatus, refreshSessions, selectedSessionId, sending],
+    [pollTurnStatus, refreshSessions, sending],
   );
 
   useEffect(() => {
@@ -169,12 +174,14 @@ export function useChatWorkspace() {
     if (selectedSessionId && sessions.length > 0) {
       const currentStillExists = sessions.some((session) => session.sessionId === selectedSessionId);
       if (!currentStillExists) {
+        selectedSessionIdRef.current = undefined;
         setSelectedSessionId(undefined);
       }
     }
   }, [selectedSessionId, sessions]);
 
   useEffect(() => {
+    selectedSessionIdRef.current = selectedSessionId;
     void loadTurns(selectedSessionId);
     if (selectedSessionId) {
       localStorage.setItem(SELECTED_SESSION_STORAGE_KEY, selectedSessionId);

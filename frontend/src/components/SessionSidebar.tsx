@@ -33,7 +33,7 @@ export function SessionSidebar({
       <div className="sidebar-header">
         <div>
           <Typography.Title heading={5}>MedNote Agent</Typography.Title>
-          <Typography.Text type="secondary">医学咨询会话</Typography.Text>
+          <Typography.Text type="secondary">可追溯医学咨询</Typography.Text>
         </div>
         <div className="sidebar-actions">
           <Tooltip content="刷新会话">

@@ -1,5 +1,6 @@
 package org.med.note.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.med.note.agent.runtime.ChatTurnSubmissionRuntime;
 import org.med.note.dao.ChatSessionMapper;
@@ -16,7 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 基于 SQLite 和 MyBatis Plus 的会话服务实现。
@@ -47,8 +50,32 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     }
 
     @Override
-    public List<ChatSessionSummaryResponse> listSessions() {
-        return chatSessionMapper.selectList(new LambdaQueryWrapper<ChatSession>()
+    public List<ChatSessionSummaryResponse> listSessions(String keyword) {
+        String normalizedKeyword = StrUtil.trimToEmpty(keyword);
+        if (StrUtil.isBlank(normalizedKeyword)) {
+            return listSessionSummaries(new LambdaQueryWrapper<ChatSession>());
+        }
+
+        Set<String> matchedSessionIds = new LinkedHashSet<>();
+        chatSessionMapper.selectList(new LambdaQueryWrapper<ChatSession>()
+                        .like(ChatSession::getTitle, normalizedKeyword))
+                .forEach(session -> matchedSessionIds.add(session.getId()));
+        chatTurnAuditMapper.selectList(new LambdaQueryWrapper<ChatTurnAudit>()
+                        .like(ChatTurnAudit::getUserInput, normalizedKeyword)
+                        .or()
+                        .like(ChatTurnAudit::getAssistantOutput, normalizedKeyword))
+                .forEach(turnAudit -> matchedSessionIds.add(turnAudit.getSessionId()));
+
+        if (matchedSessionIds.isEmpty()) {
+            return List.of();
+        }
+
+        return listSessionSummaries(new LambdaQueryWrapper<ChatSession>()
+                .in(ChatSession::getId, matchedSessionIds));
+    }
+
+    private List<ChatSessionSummaryResponse> listSessionSummaries(LambdaQueryWrapper<ChatSession> wrapper) {
+        return chatSessionMapper.selectList(wrapper
                         .orderByDesc(ChatSession::getUpdatedAt)
                         .orderByDesc(ChatSession::getCreatedAt))
                 .stream()

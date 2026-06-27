@@ -13,8 +13,10 @@ const http = axios.create({
 });
 
 export const chatApi = {
-  async listSessions(): Promise<ChatSessionSummary[]> {
-    const response = await http.get<ChatSessionSummary[]>('/chat/sessions');
+  async listSessions(keyword?: string): Promise<ChatSessionSummary[]> {
+    const response = await http.get<ChatSessionSummary[]>('/chat/sessions', {
+      params: keyword ? { keyword } : undefined,
+    });
     return response.data;
   },
 

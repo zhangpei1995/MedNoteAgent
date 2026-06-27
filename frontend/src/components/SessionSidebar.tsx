@@ -1,31 +1,39 @@
-import { Button, Empty, List, Spin, Tag, Tooltip, Typography } from '@arco-design/web-react';
+import { Button, Empty, Input, List, Spin, Tag, Tooltip, Typography } from '@arco-design/web-react';
 import { IconMessage, IconPlus, IconRefresh } from '@arco-design/web-react/icon';
 import dayjs from 'dayjs';
 import type { ChatSessionSummary } from '../types/chat';
+
+const { Search } = Input;
 
 interface SessionSidebarProps {
   sessions: ChatSessionSummary[];
   selectedSessionId?: string;
   loading: boolean;
+  searchKeyword: string;
   onSelectSession: (sessionId: string) => void;
   onStartNewSession: () => void;
   onRefresh: () => void;
+  onSearchKeywordChange: (keyword: string) => void;
 }
 
 export function SessionSidebar({
   sessions,
   selectedSessionId,
   loading,
+  searchKeyword,
   onSelectSession,
   onStartNewSession,
   onRefresh,
+  onSearchKeywordChange,
 }: SessionSidebarProps) {
+  const emptyDescription = searchKeyword.trim() ? '未找到相关会话' : '暂无会话';
+
   return (
     <aside className="session-sidebar">
       <div className="sidebar-header">
         <div>
           <Typography.Title heading={5}>MedNote Agent</Typography.Title>
-          <Typography.Text type="secondary">医学咨询会话</Typography.Text>
+          <Typography.Text type="secondary">可追溯医学咨询</Typography.Text>
         </div>
         <div className="sidebar-actions">
           <Tooltip content="刷新会话">
@@ -37,9 +45,18 @@ export function SessionSidebar({
         </div>
       </div>
 
+      <Search
+        allowClear
+        className="session-search"
+        placeholder="搜索历史对话"
+        searchButton={false}
+        value={searchKeyword}
+        onChange={onSearchKeywordChange}
+      />
+
       <Spin loading={loading} block>
         {sessions.length === 0 ? (
-          <Empty className="sidebar-empty" description="暂无会话" />
+          <Empty className="sidebar-empty" description={emptyDescription} />
         ) : (
           <List
             className="session-list"

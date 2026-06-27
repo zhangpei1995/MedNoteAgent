@@ -1,6 +1,7 @@
 import { Empty, Spin, Tag, Typography } from '@arco-design/web-react';
 import { IconLoading } from '@arco-design/web-react/icon';
 import dayjs from 'dayjs';
+import { renderAssistantMessage } from './message-renderers/rendererRegistry';
 import type { ChatTurnRecord } from '../types/chat';
 
 interface ChatMessageListProps {
@@ -58,7 +59,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
             <div className="message-bubble">
               <div className="message-meta">
                 <Typography.Text type="secondary">Agent</Typography.Text>
-                <Tag size="small" color={statusColor(turn.status)}>
+                <Tag className="message-status" size="small" color={statusColor(turn.status)}>
                   {turn.status}
                 </Tag>
               </div>
@@ -72,9 +73,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
                   <Typography.Text type="secondary">Agent 正在处理</Typography.Text>
                 </div>
               ) : (
-                <Typography.Paragraph className="message-text">
-                  {turn.assistantOutput || '暂无输出'}
-                </Typography.Paragraph>
+                renderAssistantMessage(turn.assistantOutput || '暂无输出')
               )}
             </div>
           </div>

@@ -12,6 +12,7 @@ const SELECTED_SESSION_STORAGE_KEY = 'med-note-agent:selected-session-id';
 const TERMINAL_STATUSES = new Set<ChatTurnStatus>(['SUCCESS', 'FAILED']);
 const POLL_INTERVAL_MS = 1400;
 const MAX_POLL_ATTEMPTS = 90;
+const SESSION_SEARCH_DEBOUNCE_MS = 300;
 
 function isTerminalStatus(status: ChatTurnStatus): boolean {
   return TERMINAL_STATUSES.has(status);
@@ -46,6 +47,7 @@ function readStoredSessionId(): string | undefined {
 export function useChatWorkspace() {
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | undefined>(readStoredSessionId);
+  const [sessionKeyword, setSessionKeyword] = useState('');
   const [turns, setTurns] = useState<ChatTurnRecord[]>([]);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [turnsLoading, setTurnsLoading] = useState(false);
@@ -59,17 +61,18 @@ export function useChatWorkspace() {
     [selectedSessionId, sessions],
   );
 
-  const refreshSessions = useCallback(async () => {
+  const refreshSessions = useCallback(async (keyword = sessionKeyword) => {
     setSessionLoading(true);
     try {
-      const nextSessions = await chatApi.listSessions();
+      const normalizedKeyword = keyword.trim();
+      const nextSessions = await chatApi.listSessions(normalizedKeyword || undefined);
       setSessions(nextSessions);
     } catch (error) {
       Message.error('会话列表加载失败，请确认后端服务已启动');
     } finally {
       setSessionLoading(false);
     }
-  }, []);
+  }, [sessionKeyword]);
 
   const loadTurns = useCallback(async (sessionId: string | undefined) => {
     if (!sessionId) {
@@ -98,6 +101,10 @@ export function useChatWorkspace() {
     selectedSessionIdRef.current = undefined;
     setSelectedSessionId(undefined);
     setTurns([]);
+  }, []);
+
+  const searchSessions = useCallback((keyword: string) => {
+    setSessionKeyword(keyword);
   }, []);
 
   const pollTurnStatus = useCallback(
@@ -167,18 +174,24 @@ export function useChatWorkspace() {
   );
 
   useEffect(() => {
-    void refreshSessions();
-  }, [refreshSessions]);
+    const timer = window.setTimeout(() => {
+      void refreshSessions(sessionKeyword);
+    }, SESSION_SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [refreshSessions, sessionKeyword]);
 
   useEffect(() => {
-    if (selectedSessionId && sessions.length > 0) {
+    if (selectedSessionId && sessions.length > 0 && !sessionKeyword.trim()) {
       const currentStillExists = sessions.some((session) => session.sessionId === selectedSessionId);
       if (!currentStillExists) {
         selectedSessionIdRef.current = undefined;
         setSelectedSessionId(undefined);
       }
     }
-  }, [selectedSessionId, sessions]);
+  }, [selectedSessionId, sessionKeyword, sessions]);
 
   useEffect(() => {
     selectedSessionIdRef.current = selectedSessionId;
@@ -204,10 +217,12 @@ export function useChatWorkspace() {
     selectedSessionId,
     turns,
     sessionLoading,
+    sessionKeyword,
     turnsLoading,
     sending,
     pollingTurnId,
     refreshSessions,
+    searchSessions,
     selectSession,
     startNewSession,
     sendMessage,

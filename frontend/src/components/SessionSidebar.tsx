@@ -95,7 +95,7 @@ export function SessionSidebar({
                             </Typography.Text>
                           </span>
                           <Tooltip content={session.title || '未命名咨询'}>
-                            <Typography.Text className="session-title" ellipsis>
+                            <Typography.Text className="session-title" ellipsis title={session.title || '未命名咨询'}>
                               {session.title || '未命名咨询'}
                             </Typography.Text>
                           </Tooltip>

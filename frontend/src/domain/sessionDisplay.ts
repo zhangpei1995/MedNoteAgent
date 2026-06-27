@@ -103,6 +103,34 @@ export function hasClinicalRiskSignal(turns: ChatTurnRecord[]): boolean {
   return /过敏|禁忌|妊娠|孕|儿童|老人|肝|肾|剂量|用药|药物|急诊|胸痛|呼吸困难/.test(content);
 }
 
+export function inferSafetyFocusItems(turns: ChatTurnRecord[]): string[] {
+  const content = turns.map((turn) => `${turn.userInput}\n${turn.assistantOutput || ''}`).join('\n');
+  const items = [
+    [/用药|药物|剂量|服用|抗生素|禁忌|说明书/, '用药与剂量'],
+    [/过敏|皮疹|荨麻疹|喉头水肿/, '过敏风险'],
+    [/妊娠|孕妇|怀孕|哺乳|母乳|喂奶/, '孕哺特殊状态'],
+    [/儿童|小儿|婴儿|宝宝|老人|老年/, '特殊年龄人群'],
+    [/肝功能|肝病|肝损伤|肾功能|肾病|肾损伤/, '肝肾功能风险'],
+    [/急诊|胸痛|呼吸困难|昏迷|抽搐|大出血/, '急症信号'],
+  ]
+    .filter(([pattern]) => (pattern as RegExp).test(content))
+    .map(([, label]) => label as string);
+
+  return Array.from(new Set(items));
+}
+
+export function buildTargetUnderstandingText(turns: ChatTurnRecord[], targetFeatures: string[]): string {
+  if (turns.length === 0) {
+    return '等待首次咨询。发送问题后，这里会展示系统对咨询对象、特殊状态和当前问题的理解。';
+  }
+
+  if (targetFeatures.length === 0) {
+    return '当前尚未识别到明确的年龄、性别、特殊状态或过敏线索，回答前建议补充咨询对象和关键背景。';
+  }
+
+  return `系统可能正在围绕${targetFeatures.join('、')}相关问题组织回答，请核对这些线索是否属于真正的咨询对象。`;
+}
+
 export function inferTargetUserFeatures(turns: ChatTurnRecord[]): string[] {
   const content = turns.map((turn) => `${turn.userInput}\n${turn.assistantOutput || ''}`).join('\n');
   const features = [

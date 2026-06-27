@@ -6,6 +6,8 @@
 
 ```text
 docs/
+├── assets/
+│   └── mednote-agent-drug-instruction-search.png
 ├── README.md
 └── reference/
     └── drug-instructions/
@@ -22,6 +24,7 @@ docs/
 
 | 文档 | 用途 |
 | --- | --- |
+| [项目界面截图](assets/mednote-agent-drug-instruction-search.png) | README 中展示药品说明书检索工作台的界面预览。 |
 | [药品说明书原始资料](reference/drug-instructions/) | 存放当前用于后续资料结构化、证据抽取和说明书检索引用的原始 PDF。 |
 
 ## 当前功能说明

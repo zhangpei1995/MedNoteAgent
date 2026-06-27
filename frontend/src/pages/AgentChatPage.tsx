@@ -14,16 +14,18 @@ export function AgentChatPage() {
         sessions={workspace.sessions}
         selectedSessionId={workspace.selectedSessionId}
         loading={workspace.sessionLoading}
+        searchKeyword={workspace.sessionKeyword}
         onSelectSession={workspace.selectSession}
         onStartNewSession={workspace.startNewSession}
         onRefresh={() => void workspace.refreshSessions()}
+        onSearchKeywordChange={workspace.searchSessions}
       />
 
       <main className="chat-panel">
         <header className="chat-header">
           <div className="chat-title-group">
             <Typography.Title heading={4}>
-              {workspace.selectedSession?.title || '新的医学咨询'}
+              {workspace.selectedSession?.title || (workspace.selectedSessionId ? '历史会话' : '新的医学咨询')}
             </Typography.Title>
             <Typography.Text type="secondary">
               {workspace.selectedSession ? `会话 ${workspace.selectedSession.sessionId}` : '发送第一条消息后创建会话'}

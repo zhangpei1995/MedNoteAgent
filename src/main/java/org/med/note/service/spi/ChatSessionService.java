@@ -27,9 +27,10 @@ public interface ChatSessionService {
     /**
      * 查询会话列表，按最近更新时间倒序返回。
      *
-     * @return 会话摘要列表；没有会话时返回空列表
+     * @param keyword 可选搜索关键字；为空时返回全部会话，不为空时匹配会话标题、用户输入和助手输出
+     * @return 会话摘要列表；没有会话或没有匹配结果时返回空列表
      */
-    List<ChatSessionSummaryResponse> listSessions();
+    List<ChatSessionSummaryResponse> listSessions(String keyword);
 
     /**
      * 查询指定会话下的全部轮次，按创建时间正序返回。

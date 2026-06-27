@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,15 +50,17 @@ public class ChatSessionController {
     }
 
     /**
-     * 查询全部会话摘要。
+     * 查询会话摘要。
      *
-     * <p>返回结果按最近更新时间倒序排列，用于前端左侧会话列表。</p>
+     * <p>返回结果按最近更新时间倒序排列，用于前端左侧会话列表。keyword 为空时查询全部会话；
+     * keyword 不为空时按会话标题、用户输入和助手输出搜索历史对话。</p>
      *
-     * @return 会话摘要列表；没有会话时返回空列表
+     * @param keyword 可选搜索关键字；为空时返回全部会话
+     * @return 会话摘要列表；没有会话或没有匹配结果时返回空列表
      */
     @GetMapping("/sessions")
-    public List<ChatSessionSummaryResponse> listSessions() {
-        return chatSessionService.listSessions();
+    public List<ChatSessionSummaryResponse> listSessions(@RequestParam(required = false) String keyword) {
+        return chatSessionService.listSessions(keyword);
     }
 
     /**

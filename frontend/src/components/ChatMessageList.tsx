@@ -36,7 +36,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
   if (turns.length === 0) {
     return (
       <div className="message-empty">
-        <Empty description="选择历史会话，或开始新的医学咨询" />
+        <Empty description="选择历史检索，或开始新的药品说明书检索" />
       </div>
     );
   }
@@ -48,7 +48,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
           <div className="message-row user">
             <div className="message-bubble">
               <div className="message-meta">
-                <Typography.Text type="secondary">咨询输入</Typography.Text>
+                <Typography.Text type="secondary">检索输入</Typography.Text>
                 <Typography.Text type="secondary">{dayjs(turn.createdAt).format('HH:mm:ss')}</Typography.Text>
               </div>
               <Typography.Paragraph className="message-text">{turn.userInput}</Typography.Paragraph>
@@ -58,7 +58,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
           <div className="message-row assistant">
             <div className="message-bubble">
               <div className="message-meta">
-                <Typography.Text type="secondary">医学 Agent</Typography.Text>
+                <Typography.Text type="secondary">说明书检索 Agent</Typography.Text>
                 <Tag className="message-status" size="small" color={statusColor(turn.status)}>
                   {turn.status}
                 </Tag>
@@ -70,7 +70,7 @@ export function ChatMessageList({ turns, loading, pollingTurnId }: ChatMessageLi
               ) : shouldShowAssistantLoading(turn, pollingTurnId) ? (
                 <div className="assistant-loading">
                   <IconLoading spin />
-                  <Typography.Text type="secondary">正在检索上下文并生成可追溯回答</Typography.Text>
+                  <Typography.Text type="secondary">正在检索已录入药品说明书并生成回答</Typography.Text>
                 </div>
               ) : (
                 renderAssistantMessage(turn.assistantOutput || '暂无输出')

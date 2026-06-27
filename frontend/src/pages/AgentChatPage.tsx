@@ -27,21 +27,21 @@ export function AgentChatPage() {
           <header className="chat-header">
             <div className="chat-title-group">
               <Typography.Title heading={5}>
-                {workspace.selectedSession?.title || (workspace.selectedSessionId ? '历史会话' : '新的医学咨询')}
+                {workspace.selectedSession?.title || (workspace.selectedSessionId ? '历史检索' : '新的药品说明书检索')}
               </Typography.Title>
               <Space className="chat-session-meta" size={8} wrap>
                 <Tag size="small" icon={<IconSafe />}>
-                  可追溯医学问答
+                  可追溯说明书检索
                 </Tag>
                 <Typography.Text type="secondary">
-                  {workspace.selectedSession ? '基于当前咨询内容生成，不能替代医生诊断' : '发送第一条消息后开始咨询'}
+                  {workspace.selectedSession ? '仅基于已录入药品说明书回答' : '发送药品名称后开始检索'}
                 </Typography.Text>
               </Space>
             </div>
             <div className="chat-header-actions">
               <Button className="header-icon-action" icon={<IconMore />} />
               <Button className="header-new-session" icon={<IconPlus />} onClick={workspace.startNewSession}>
-                新咨询
+                新检索
               </Button>
             </div>
           </header>

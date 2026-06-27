@@ -31,7 +31,7 @@ export function SessionSidebar({
   onRefresh,
   onSearchKeywordChange,
 }: SessionSidebarProps) {
-  const emptyDescription = searchKeyword.trim() ? '未找到相关咨询' : '暂无咨询记录';
+  const emptyDescription = searchKeyword.trim() ? '未找到相关检索' : '暂无检索记录';
   const historyGroups = groupSessionsByRecency(sessions);
 
   return (
@@ -39,18 +39,18 @@ export function SessionSidebar({
       <div className="sidebar-header">
         <div>
           <Typography.Title heading={5}>MedNote Agent</Typography.Title>
-          <Typography.Text type="secondary">医学咨询工作台</Typography.Text>
+          <Typography.Text type="secondary">药品说明书检索工作台</Typography.Text>
         </div>
       </div>
 
       <Button className="sidebar-nav-action" icon={<IconPlus />} onClick={onStartNewSession}>
-        开始新咨询
+        开始新检索
       </Button>
 
       <Search
         allowClear
         className="session-search"
-        placeholder="搜索症状、疾病、用药或历史咨询"
+        placeholder="搜索药品、说明书条目或历史检索"
         searchButton={false}
         value={searchKeyword}
         onChange={onSearchKeywordChange}
@@ -59,9 +59,9 @@ export function SessionSidebar({
       <div className="sidebar-section-label">
         <span>
           <IconHistory />
-          历史咨询
+          历史检索
         </span>
-        <Tooltip content="刷新历史咨询">
+        <Tooltip content="刷新历史检索">
           <Button className="sidebar-refresh-action" icon={<IconRefresh />} onClick={onRefresh} />
         </Tooltip>
       </div>
@@ -94,9 +94,9 @@ export function SessionSidebar({
                               {formatSessionHistoryTime(session)}
                             </Typography.Text>
                           </span>
-                          <Tooltip content={session.title || '未命名咨询'}>
-                            <Typography.Text className="session-title" ellipsis title={session.title || '未命名咨询'}>
-                              {session.title || '未命名咨询'}
+                          <Tooltip content={session.title || '未命名检索'}>
+                            <Typography.Text className="session-title" ellipsis title={session.title || '未命名检索'}>
+                              {session.title || '未命名检索'}
                             </Typography.Text>
                           </Tooltip>
                         </span>

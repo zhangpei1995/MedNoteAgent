@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Input } from '@arco-design/web-react';
-import { IconSend } from '@arco-design/web-react/icon';
+import { Button, Input, Tag, Typography } from '@arco-design/web-react';
+import { IconBulb, IconCommand, IconSafe, IconSend } from '@arco-design/web-react/icon';
 
 interface ChatInputProps {
   disabled?: boolean;
@@ -23,6 +23,12 @@ export function ChatInput({ disabled, onSend }: ChatInputProps) {
   return (
     <div className="chat-input-shell">
       <div className="chat-input-card">
+        <div className="chat-input-topline">
+          <Tag className="input-context-tag" size="small" icon={<IconSafe />}>
+            医学安全回答
+          </Tag>
+          <Typography.Text type="secondary">Enter 发送，Shift + Enter 换行</Typography.Text>
+        </div>
         <Input.TextArea
           value={value}
           autoSize={{ minRows: 2, maxRows: 5 }}
@@ -37,7 +43,16 @@ export function ChatInput({ disabled, onSend }: ChatInputProps) {
           }}
         />
         <div className="chat-input-actions">
-          <span aria-hidden="true" />
+          <div className="input-assist-chips" aria-hidden="true">
+            <span>
+              <IconBulb />
+              证据
+            </span>
+            <span>
+              <IconCommand />
+              风险
+            </span>
+          </div>
           <Button
             className="send-button"
             type="primary"

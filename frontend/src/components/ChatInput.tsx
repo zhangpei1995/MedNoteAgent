@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Input } from '@arco-design/web-react';
-import { IconSend } from '@arco-design/web-react/icon';
+import { Button, Input, Tag, Typography } from '@arco-design/web-react';
+import { IconBook, IconCommand, IconSafe, IconSend } from '@arco-design/web-react/icon';
 
 interface ChatInputProps {
   disabled?: boolean;
@@ -23,10 +23,16 @@ export function ChatInput({ disabled, onSend }: ChatInputProps) {
   return (
     <div className="chat-input-shell">
       <div className="chat-input-card">
+        <div className="chat-input-topline">
+          <Tag className="input-context-tag" size="small" icon={<IconSafe />}>
+            药品说明书检索
+          </Tag>
+          <Typography.Text type="secondary">Enter 发送，Shift + Enter 换行</Typography.Text>
+        </div>
         <Input.TextArea
           value={value}
           autoSize={{ minRows: 2, maxRows: 5 }}
-          placeholder="输入医学问题、病例上下文或需要核对的用药信息"
+          placeholder="输入药品名称或要查询的说明书条目，例如用法用量、禁忌、不良反应"
           disabled={disabled}
           onChange={setValue}
           onPressEnter={(event) => {
@@ -37,7 +43,16 @@ export function ChatInput({ disabled, onSend }: ChatInputProps) {
           }}
         />
         <div className="chat-input-actions">
-          <span aria-hidden="true" />
+          <div className="input-assist-chips" aria-hidden="true">
+            <span>
+              <IconBook />
+              说明书
+            </span>
+            <span>
+              <IconCommand />
+              未收录则说明
+            </span>
+          </div>
           <Button
             className="send-button"
             type="primary"

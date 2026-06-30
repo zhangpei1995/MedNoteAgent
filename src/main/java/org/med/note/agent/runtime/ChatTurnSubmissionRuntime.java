@@ -4,8 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import org.med.note.agent.client.ChatAgentClient;
 import org.med.note.agent.lifecycle.ChatTurnLifecycleManager;
-import org.med.note.agent.title.SessionTitleGenerationClient;
-import org.med.note.agent.title.SessionTitleLifecycleManager;
+import org.med.note.agent.metadata.SessionMetadataGenerationClient;
 import org.med.note.dao.ChatSessionMapper;
 import org.med.note.domain.entity.ChatSession;
 import org.med.note.domain.entity.ChatTurnAudit;
@@ -33,18 +32,18 @@ public class ChatTurnSubmissionRuntime {
     private final ChatSessionMapper chatSessionMapper;
     private final ChatTurnLifecycleManager chatTurnLifecycleManager;
     private final ChatAgentClient chatAgentClient;
-    private final SessionTitleGenerationClient sessionTitleGenerationClient;
+    private final SessionMetadataGenerationClient sessionMetadataGenerationClient;
 
     public ChatTurnSubmissionRuntime(
             ChatSessionMapper chatSessionMapper,
             ChatTurnLifecycleManager chatTurnLifecycleManager,
             ChatAgentClient chatAgentClient,
-            SessionTitleGenerationClient sessionTitleGenerationClient
+            SessionMetadataGenerationClient sessionMetadataGenerationClient
     ) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatTurnLifecycleManager = chatTurnLifecycleManager;
         this.chatAgentClient = chatAgentClient;
-        this.sessionTitleGenerationClient = sessionTitleGenerationClient;
+        this.sessionMetadataGenerationClient = sessionMetadataGenerationClient;
     }
 
     /**
@@ -65,7 +64,7 @@ public class ChatTurnSubmissionRuntime {
         );
         executeAgentAfterCommit(turnAudit.getId());
         if (createSession) {
-            generateTitleAfterCommit(session.getId(), turnAudit.getId());
+            generateMetadataAfterCommit(session.getId(), turnAudit.getId());
         }
 
         ChatTurnSubmission submission = new ChatTurnSubmission();
@@ -88,16 +87,16 @@ public class ChatTurnSubmissionRuntime {
         });
     }
 
-    private void generateTitleAfterCommit(String sessionId, String sourceTurnId) {
+    private void generateMetadataAfterCommit(String sessionId, String sourceTurnId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            sessionTitleGenerationClient.generateAsync(sessionId, sourceTurnId);
+            sessionMetadataGenerationClient.generateAsync(sessionId, sourceTurnId);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                sessionTitleGenerationClient.generateAsync(sessionId, sourceTurnId);
+                sessionMetadataGenerationClient.generateAsync(sessionId, sourceTurnId);
             }
         });
     }
@@ -107,8 +106,6 @@ public class ChatTurnSubmissionRuntime {
             ChatSession session = new ChatSession();
             session.setId(IdUtil.fastSimpleUUID());
             session.setUserId(StrUtil.blankToDefault(request.getUserId(), null));
-            session.setTitle(null);
-            session.setTitleStatus(SessionTitleLifecycleManager.TITLE_STATUS_GENERATING);
             session.setStatus(SESSION_STATUS_ACTIVE);
             session.setCreatedAt(now);
             session.setUpdatedAt(now);

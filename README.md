@@ -1,6 +1,6 @@
 # MedNoteAgent
 
-MedNoteAgent 是一个基于 Spring Boot 3 的药品说明书检索 Agent 项目。当前阶段已经完成基础聊天闭环：前端提交药品说明书检索问题，后端创建或复用会话，写入轮次审计记录，事务提交后异步调用 DashScope 大模型，并把执行结果回写到 SQLite。
+MedNoteAgent 是一个基于 Spring Boot 3 的药品说明书检索 Agent 项目。当前阶段已经完成基础聊天闭环：前端提交药品说明书检索问题，后端创建或复用会话，写入轮次审计记录，事务提交后异步调用 DashScope 大模型，并异步生成会话元数据，最终把执行结果回写到 SQLite。
 
 当前只做药品说明书事实检索：基于已录入药品说明书回答药品名称、用法用量、禁忌、注意事项、不良反应、相互作用等条目；不做疾病诊断、治疗建议或个体化用药判断。知识库未识别到药品时回答未知药品，药品说明书未收录或未抽取到相关条目时说明药品说明未录入。
 
@@ -15,12 +15,13 @@ MedNoteAgent 是一个基于 Spring Boot 3 的药品说明书检索 Agent 项目
 | 能力 | 当前实现 |
 | --- | --- |
 | 后端应用 | Spring Boot 3 应用入口：`src/main/java/org/med/note/MedNoteAgentApplication.java` |
-| 会话接口 | `POST /api/chat/sessions` 提交一轮问题；`GET /api/chat/sessions` 查询会话列表；`GET /api/chat/sessions/{sessionId}/turns` 查询会话轮次；`GET /api/chat/turns/{turnId}` 查询轮次状态 |
-| 会话服务 | `ChatSessionService` 负责对外会话契约，`ChatTurnSubmissionRuntime` 负责编排会话创建、轮次审计和异步 Agent 执行 |
+| 会话接口 | `POST /api/chat/sessions` 提交一轮问题；`GET /api/chat/sessions` 查询会话列表；`GET /api/chat/sessions/{sessionId}/metadata` 查询会话元数据；`GET /api/chat/sessions/{sessionId}/turns` 查询会话轮次；`GET /api/chat/turns/{turnId}` 查询轮次状态 |
+| 会话服务 | `ChatSessionService` 负责对外会话契约，`ChatTurnSubmissionRuntime` 负责编排会话创建、轮次审计、异步 Agent 执行和异步会话元数据生成 |
 | Agent 执行 | `DashscopeChatAgentExecutor` 读取 `src/main/java/org/med/note/agent/AgentPrompt.md`，调用 DashScope 模型生成回答 |
 | 数据存储 | SQLite 数据库默认写入 `data/mednote-agent.sqlite`；schema 位于 `src/main/resources/db/schema-sqlite.sql` |
 | 审计记录 | `chat_turn_audit` 保存用户输入、模型输出、模型信息、系统提示词、请求响应 JSON、状态、错误信息和耗时 |
-| 前端工作台 | `frontend/` 提供 Vite + React 药品说明书检索页，支持会话列表、会话切换、消息提交和轮次状态刷新 |
+| 会话元数据 | `chat_session_metadata` 保存标题、咨询类别、检索对象、说明书条目、收录状态、边界状态和系统理解摘要 |
+| 前端工作台 | `frontend/` 提供 Vite + React 药品说明书检索页，支持会话列表、会话切换、消息提交、轮次状态刷新和元数据刷新 |
 | API 文档 | 集成 Springdoc 和 Knife4j，可查看后端接口 |
 | 参考资料 | `docs/reference/drug-instructions/` 存放当前原始药品说明书 PDF |
 
@@ -73,11 +74,12 @@ VITE_API_PROXY_TARGET=http://localhost:8080
   -> POST /api/chat/sessions
   -> ChatSessionService
   -> ChatTurnSubmissionRuntime
-  -> chat_session / chat_turn_audit
+  -> chat_session / chat_turn_audit / chat_session_metadata
   -> 事务提交后异步执行 Agent
+  -> 事务提交后异步生成会话元数据
   -> DashScope 模型调用
-  -> 回写 chat_turn_audit
-  -> 前端查询轮次状态并展示检索回答
+  -> 回写 chat_turn_audit 和 chat_session_metadata
+  -> 前端查询轮次状态和会话元数据并展示检索回答
 ```
 
 这条链路已经进入正式模块边界：
@@ -85,6 +87,7 @@ VITE_API_PROXY_TARGET=http://localhost:8080
 - Controller 只负责 HTTP 入参出参。
 - Service 暴露会话能力契约。
 - Runtime 编排一轮提交和异步执行。
+- Metadata Analyzer 负责会话标题、类别、检索对象和边界状态等元数据分析。
 - Executor 负责模型调用。
 - DAO 和实体负责 SQLite 持久化。
 - 前端通过统一 API 模块访问后端接口。

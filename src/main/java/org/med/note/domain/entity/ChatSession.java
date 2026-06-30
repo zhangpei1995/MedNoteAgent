@@ -28,26 +28,6 @@ public class ChatSession {
     private String userId;
 
     /**
-     * 会话真实展示标题；为空表示标题尚未生成，前端应展示默认文案。
-     */
-    private String title;
-
-    /**
-     * 标题生成状态，例如 GENERATING、GENERATED、FAILED。
-     */
-    private String titleStatus;
-
-    /**
-     * 标题生成完成时间；生成中或生成失败时为空。
-     */
-    private LocalDateTime titleGeneratedAt;
-
-    /**
-     * 标题生成失败时的错误摘要；成功或生成中时为空。
-     */
-    private String titleErrorMessage;
-
-    /**
      * 会话状态，例如 ACTIVE、ENDED、ERROR。
      */
     private String status;

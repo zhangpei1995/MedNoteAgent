@@ -1,10 +1,6 @@
 CREATE TABLE IF NOT EXISTS chat_session (
     id TEXT PRIMARY KEY,
     user_id TEXT,
-    title TEXT,
-    title_status TEXT NOT NULL DEFAULT 'GENERATING',
-    title_generated_at DATETIME,
-    title_error_message TEXT,
     status TEXT NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
@@ -16,6 +12,29 @@ CREATE INDEX IF NOT EXISTS idx_chat_session_user_id
 
 CREATE INDEX IF NOT EXISTS idx_chat_session_created_at
     ON chat_session (created_at);
+
+CREATE TABLE IF NOT EXISTS chat_session_metadata (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL UNIQUE,
+    source_turn_id TEXT,
+    status TEXT NOT NULL,
+    title TEXT,
+    consultation_category TEXT,
+    recognized_drug_name TEXT,
+    instruction_item TEXT,
+    knowledge_status TEXT,
+    scope_status TEXT,
+    understanding_text TEXT,
+    metadata_json TEXT,
+    error_message TEXT,
+    generated_at DATETIME,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES chat_session (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_session_metadata_session_id
+    ON chat_session_metadata (session_id);
 
 CREATE TABLE IF NOT EXISTS chat_turn_audit (
     id TEXT PRIMARY KEY,

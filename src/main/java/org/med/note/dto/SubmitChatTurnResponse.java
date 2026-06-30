@@ -4,6 +4,7 @@ import lombok.Data;
 import org.med.note.agent.runtime.ChatTurnSubmission;
 import org.med.note.domain.entity.ChatSession;
 import org.med.note.domain.entity.ChatTurnAudit;
+import org.med.note.domain.metadata.SessionMetadataStatus;
 
 import java.time.LocalDateTime;
 
@@ -30,20 +31,11 @@ public class SubmitChatTurnResponse {
      */
     private String turnId;
 
-    /**
-     * 会话真实展示标题。新会话标题生成前为空，前端展示默认标题。
-     */
     private String title;
 
-    /**
-     * 标题生成状态，例如 GENERATING、GENERATED、FAILED。
-     */
-    private String titleStatus;
+    private String metadataStatus;
 
-    /**
-     * 标题生成完成时间；生成中或失败时为空。
-     */
-    private LocalDateTime titleGeneratedAt;
+    private LocalDateTime metadataGeneratedAt;
 
     /**
      * 会话状态，例如 ACTIVE、ENDED、ERROR。
@@ -97,9 +89,9 @@ public class SubmitChatTurnResponse {
         response.setSessionId(session.getId());
         response.setUserId(session.getUserId());
         response.setTurnId(turnAudit.getId());
-        response.setTitle(session.getTitle());
-        response.setTitleStatus(session.getTitleStatus());
-        response.setTitleGeneratedAt(session.getTitleGeneratedAt());
+        response.setTitle(null);
+        response.setMetadataStatus(SessionMetadataStatus.GENERATING.name());
+        response.setMetadataGeneratedAt(null);
         response.setStatus(session.getStatus());
         response.setSessionCreatedAt(session.getCreatedAt());
         response.setSessionUpdatedAt(session.getUpdatedAt());

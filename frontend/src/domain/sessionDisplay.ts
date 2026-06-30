@@ -13,38 +13,29 @@ export interface SessionHistoryGroup {
 
 interface ConsultationTypeRule {
   type: ConsultationType;
-  pattern: RegExp;
+  category: string;
 }
 
 const CONSULTATION_TYPE_RULES: ConsultationTypeRule[] = [
-  {
-    type: { label: '说明书条目', tone: 'green' },
-    pattern: /说明书|用法|用量|剂量|服用|禁忌|注意事项|不良反应|相互作用|成分|贮藏|有效期/i,
-  },
-  {
-    type: { label: '未知药品', tone: 'orange' },
-    pattern: /未知药品|未识别药品|药品名称不明确/i,
-  },
-  {
-    type: { label: '说明未录入', tone: 'gray' },
-    pattern: /未录入|未收录|未检索到|没有找到|资料不足/i,
-  },
-  {
-    type: { label: '药品检索', tone: 'blue' },
-    pattern: /药|颗粒|片|胶囊|口服液|丸|散|注射液|二冬汤|菖麻熄风/i,
-  },
+  { category: 'DRUG_LOOKUP', type: { label: '药品检索', tone: 'blue' } },
+  { category: 'USAGE_DOSAGE', type: { label: '用法用量', tone: 'green' } },
+  { category: 'CONTRAINDICATION', type: { label: '禁忌慎用', tone: 'orange' } },
+  { category: 'ADVERSE_REACTION', type: { label: '不良反应', tone: 'orange' } },
+  { category: 'INTERACTION', type: { label: '相互作用', tone: 'green' } },
+  { category: 'PRECAUTION', type: { label: '注意事项', tone: 'green' } },
+  { category: 'INSTRUCTION_ITEM', type: { label: '说明书条目', tone: 'green' } },
+  { category: 'OUT_OF_SCOPE', type: { label: '超出范围', tone: 'gray' } },
 ];
 
 const FALLBACK_CONSULTATION_TYPE: ConsultationType = { label: '药品检索', tone: 'blue' };
 const WEEKDAY_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-export function inferConsultationType(text: string): ConsultationType {
-  const matchedRule = CONSULTATION_TYPE_RULES.find((rule) => rule.pattern.test(text));
+export function getSessionConsultationType(session: ChatSessionSummary): ConsultationType {
+  const matchedRule = CONSULTATION_TYPE_RULES.find((rule) => rule.category === session.consultationCategory);
+  if (!matchedRule && session.consultationCategoryLabel) {
+    return { label: session.consultationCategoryLabel, tone: 'blue' };
+  }
   return matchedRule?.type ?? FALLBACK_CONSULTATION_TYPE;
-}
-
-export function buildSessionClassificationText(session: ChatSessionSummary): string {
-  return session.title || '';
 }
 
 export function groupSessionsByRecency(sessions: ChatSessionSummary[], now = dayjs()): SessionHistoryGroup[] {

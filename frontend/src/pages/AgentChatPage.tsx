@@ -62,6 +62,7 @@ export function AgentChatPage() {
         </div>
 
         <MedicalContextPanel
+          session={workspace.selectedSession}
           turns={workspace.turns}
           pollingTurnId={workspace.pollingTurnId}
         />

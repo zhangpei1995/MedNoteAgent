@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type {
   ChatSessionSummary,
-  ChatSessionTitleResponse,
+  ChatSessionMetadataResponse,
   ChatTurnRecord,
   ChatTurnStatusResponse,
   SubmitChatTurnRequest,
@@ -26,8 +26,8 @@ export const chatApi = {
     return response.data;
   },
 
-  async getSessionTitle(sessionId: string): Promise<ChatSessionTitleResponse> {
-    const response = await http.get<ChatSessionTitleResponse>(`/chat/sessions/${sessionId}/title`);
+  async getSessionMetadata(sessionId: string): Promise<ChatSessionMetadataResponse> {
+    const response = await http.get<ChatSessionMetadataResponse>(`/chat/sessions/${sessionId}/metadata`);
     return response.data;
   },
 

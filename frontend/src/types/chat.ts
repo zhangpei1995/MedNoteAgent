@@ -1,12 +1,21 @@
 export type ChatTurnStatus = 'WAITING_AGENT' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | string;
-export type ChatSessionTitleStatus = 'GENERATING' | 'GENERATED' | 'FAILED' | string;
+export type ChatSessionMetadataStatus = 'GENERATING' | 'GENERATED' | 'FAILED' | string;
 
 export interface ChatSessionSummary {
   sessionId: string;
   userId?: string | null;
   title?: string | null;
-  titleStatus: ChatSessionTitleStatus;
-  titleGeneratedAt?: string | null;
+  metadataStatus: ChatSessionMetadataStatus;
+  consultationCategory?: string | null;
+  consultationCategoryLabel?: string | null;
+  recognizedDrugName?: string | null;
+  instructionItem?: string | null;
+  knowledgeStatus?: string | null;
+  knowledgeStatusLabel?: string | null;
+  scopeStatus?: string | null;
+  scopeStatusLabel?: string | null;
+  understandingText?: string | null;
+  metadataGeneratedAt?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -35,8 +44,8 @@ export interface SubmitChatTurnResponse {
   userId?: string | null;
   turnId: string;
   title?: string | null;
-  titleStatus: ChatSessionTitleStatus;
-  titleGeneratedAt?: string | null;
+  metadataStatus: ChatSessionMetadataStatus;
+  metadataGeneratedAt?: string | null;
   status: string;
   sessionCreatedAt: string;
   sessionUpdatedAt: string;
@@ -56,9 +65,20 @@ export interface ChatTurnStatusResponse {
   completedAt?: string | null;
 }
 
-export interface ChatSessionTitleResponse {
+export interface ChatSessionMetadataResponse {
   sessionId: string;
+  sourceTurnId?: string | null;
+  metadataStatus: ChatSessionMetadataStatus;
   title?: string | null;
-  titleStatus: ChatSessionTitleStatus;
-  titleGeneratedAt?: string | null;
+  consultationCategory?: string | null;
+  consultationCategoryLabel?: string | null;
+  recognizedDrugName?: string | null;
+  instructionItem?: string | null;
+  knowledgeStatus?: string | null;
+  knowledgeStatusLabel?: string | null;
+  scopeStatus?: string | null;
+  scopeStatusLabel?: string | null;
+  understandingText?: string | null;
+  errorMessage?: string | null;
+  generatedAt?: string | null;
 }

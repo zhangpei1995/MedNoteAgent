@@ -7,27 +7,28 @@ import {
   IconSafe,
   IconUser,
 } from '@arco-design/web-react/icon';
-import type { ChatTurnRecord } from '../types/chat';
+import type { ChatSessionSummary, ChatTurnRecord } from '../types/chat';
 import {
-  buildInstructionUnderstandingText,
   countEvidenceSignals,
-  hasInstructionBoundarySignal,
-  inferDrugInstructionFeatures,
-  inferInstructionFocusItems,
 } from '../domain/sessionDisplay';
 
 interface MedicalContextPanelProps {
+  session?: ChatSessionSummary;
   turns: ChatTurnRecord[];
   pollingTurnId?: string;
 }
 
-export function MedicalContextPanel({ turns, pollingTurnId }: MedicalContextPanelProps) {
+export function MedicalContextPanel({ session, turns, pollingTurnId }: MedicalContextPanelProps) {
   const isProcessing = Boolean(pollingTurnId);
   const evidenceCount = countEvidenceSignals(turns);
-  const hasBoundarySignal = hasInstructionBoundarySignal(turns);
-  const targetFeatures = inferDrugInstructionFeatures(turns);
-  const instructionFocusItems = inferInstructionFocusItems(turns);
-  const understandingText = buildInstructionUnderstandingText(turns, targetFeatures);
+  const isMetadataGenerating = session?.metadataStatus === 'GENERATING';
+  const hasBoundarySignal = session?.scopeStatus === 'OUT_OF_SCOPE'
+    || session?.knowledgeStatus === 'UNKNOWN_DRUG'
+    || session?.knowledgeStatus === 'NOT_INCLUDED';
+  const targetFeatures = [session?.recognizedDrugName].filter(Boolean) as string[];
+  const instructionFocusItems = [session?.instructionItem].filter(Boolean) as string[];
+  const understandingText = session?.understandingText
+    || '等待首次检索。发送药品名称或说明书条目后，这里会展示系统对检索对象的理解。';
 
   return (
     <aside className="medical-context-panel" aria-label="药品说明书检索上下文">
@@ -39,8 +40,8 @@ export function MedicalContextPanel({ turns, pollingTurnId }: MedicalContextPane
         <div className="context-understanding-card">
           <div>
             <span>系统当前理解</span>
-            <Tag size="small" color={isProcessing ? 'blue' : 'gray'}>
-              {isProcessing ? '生成中' : '待核对'}
+            <Tag size="small" color={isMetadataGenerating || isProcessing ? 'blue' : 'gray'}>
+              {isMetadataGenerating || isProcessing ? '生成中' : '待核对'}
             </Tag>
           </div>
           <strong>{understandingText}</strong>

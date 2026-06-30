@@ -2,6 +2,7 @@ package org.med.note.dto;
 
 import lombok.Data;
 import org.med.note.domain.entity.ChatSession;
+import org.med.note.domain.entity.ChatSessionMetadata;
 
 import java.time.LocalDateTime;
 
@@ -24,20 +25,29 @@ public class ChatSessionSummaryResponse {
      */
     private String userId;
 
-    /**
-     * 会话真实展示标题；为空时前端展示默认标题。
-     */
     private String title;
 
-    /**
-     * 标题生成状态，例如 GENERATING、GENERATED、FAILED。
-     */
-    private String titleStatus;
+    private String metadataStatus;
 
-    /**
-     * 标题生成完成时间；生成中或失败时为空。
-     */
-    private LocalDateTime titleGeneratedAt;
+    private String consultationCategory;
+
+    private String consultationCategoryLabel;
+
+    private String recognizedDrugName;
+
+    private String instructionItem;
+
+    private String knowledgeStatus;
+
+    private String knowledgeStatusLabel;
+
+    private String scopeStatus;
+
+    private String scopeStatusLabel;
+
+    private String understandingText;
+
+    private LocalDateTime metadataGeneratedAt;
 
     /**
      * 会话状态，例如 ACTIVE、ENDED、ERROR。
@@ -65,13 +75,26 @@ public class ChatSessionSummaryResponse {
      * @param session 会话实体，不应为空
      * @return 会话列表可展示的摘要数据
      */
-    public static ChatSessionSummaryResponse of(ChatSession session) {
+    public static ChatSessionSummaryResponse of(ChatSession session, ChatSessionMetadata metadata) {
         ChatSessionSummaryResponse response = new ChatSessionSummaryResponse();
         response.setSessionId(session.getId());
         response.setUserId(session.getUserId());
-        response.setTitle(session.getTitle());
-        response.setTitleStatus(session.getTitleStatus());
-        response.setTitleGeneratedAt(session.getTitleGeneratedAt());
+        if (metadata == null) {
+            response.setMetadataStatus("GENERATING");
+        } else {
+            response.setTitle(metadata.getTitle());
+            response.setMetadataStatus(metadata.getStatus());
+            response.setConsultationCategory(metadata.getConsultationCategory());
+            response.setConsultationCategoryLabel(ChatSessionMetadataResponse.consultationCategoryLabel(metadata.getConsultationCategory()));
+            response.setRecognizedDrugName(metadata.getRecognizedDrugName());
+            response.setInstructionItem(metadata.getInstructionItem());
+            response.setKnowledgeStatus(metadata.getKnowledgeStatus());
+            response.setKnowledgeStatusLabel(ChatSessionMetadataResponse.knowledgeStatusLabel(metadata.getKnowledgeStatus()));
+            response.setScopeStatus(metadata.getScopeStatus());
+            response.setScopeStatusLabel(ChatSessionMetadataResponse.scopeStatusLabel(metadata.getScopeStatus()));
+            response.setUnderstandingText(metadata.getUnderstandingText());
+            response.setMetadataGeneratedAt(metadata.getGeneratedAt());
+        }
         response.setStatus(session.getStatus());
         response.setCreatedAt(session.getCreatedAt());
         response.setUpdatedAt(session.getUpdatedAt());

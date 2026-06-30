@@ -21,14 +21,49 @@ public class SubmitChatTurnResponse {
     private String sessionId;
 
     /**
+     * 外部用户 ID。当前阶段可为空，仅用于前端保持会话摘要一致。
+     */
+    private String userId;
+
+    /**
      * 本轮对话审计 ID，用于查询 Agent 执行状态和最终输出。
      */
     private String turnId;
 
     /**
-     * 会话展示标题，用于前端会话列表或状态页。
+     * 会话真实展示标题。新会话标题生成前为空，前端展示默认标题。
      */
     private String title;
+
+    /**
+     * 标题生成状态，例如 GENERATING、GENERATED、FAILED。
+     */
+    private String titleStatus;
+
+    /**
+     * 标题生成完成时间；生成中或失败时为空。
+     */
+    private LocalDateTime titleGeneratedAt;
+
+    /**
+     * 会话状态，例如 ACTIVE、ENDED、ERROR。
+     */
+    private String status;
+
+    /**
+     * 会话创建时间。
+     */
+    private LocalDateTime sessionCreatedAt;
+
+    /**
+     * 会话最近更新时间。提交新轮次后更新为本轮提交时间。
+     */
+    private LocalDateTime sessionUpdatedAt;
+
+    /**
+     * 会话结束时间；未结束时为空。
+     */
+    private LocalDateTime endedAt;
 
     /**
      * 本轮初始状态。当前阶段为 WAITING_AGENT，表示记录已落库但尚未执行 Agent。
@@ -60,8 +95,15 @@ public class SubmitChatTurnResponse {
     public static SubmitChatTurnResponse of(ChatSession session, ChatTurnAudit turnAudit) {
         SubmitChatTurnResponse response = new SubmitChatTurnResponse();
         response.setSessionId(session.getId());
+        response.setUserId(session.getUserId());
         response.setTurnId(turnAudit.getId());
         response.setTitle(session.getTitle());
+        response.setTitleStatus(session.getTitleStatus());
+        response.setTitleGeneratedAt(session.getTitleGeneratedAt());
+        response.setStatus(session.getStatus());
+        response.setSessionCreatedAt(session.getCreatedAt());
+        response.setSessionUpdatedAt(session.getUpdatedAt());
+        response.setEndedAt(session.getEndedAt());
         response.setTurnStatus(turnAudit.getStatus());
         response.setCreatedAt(turnAudit.getCreatedAt());
         return response;

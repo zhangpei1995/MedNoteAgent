@@ -7,7 +7,11 @@ spring:
     name: med-note-agent
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:./data/mednote-agent.sqlite
+    url: "jdbc:sqlite:./data/mednote-agent.sqlite?busy_timeout=10000&journal_mode=WAL&synchronous=NORMAL"
+    hikari:
+      maximum-pool-size: 1
+      minimum-idle: 1
+      connection-timeout: 30000
   sql:
     init:
       mode: always

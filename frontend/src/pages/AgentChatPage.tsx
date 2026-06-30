@@ -6,6 +6,8 @@ import { MedicalContextPanel } from '../components/MedicalContextPanel';
 import { SessionSidebar } from '../components/SessionSidebar';
 import { useChatWorkspace } from '../hooks/useChatWorkspace';
 
+const DEFAULT_SESSION_TITLE = '新问题';
+
 export function AgentChatPage() {
   const workspace = useChatWorkspace();
 
@@ -27,14 +29,14 @@ export function AgentChatPage() {
           <header className="chat-header">
             <div className="chat-title-group">
               <Typography.Title heading={5}>
-                {workspace.selectedSession?.title || (workspace.selectedSessionId ? '历史检索' : '新的药品说明书检索')}
+                {workspace.selectedSessionTitle ?? DEFAULT_SESSION_TITLE}
               </Typography.Title>
               <Space className="chat-session-meta" size={8} wrap>
                 <Tag size="small" icon={<IconSafe />}>
                   可追溯说明书检索
                 </Tag>
                 <Typography.Text type="secondary">
-                  {workspace.selectedSession ? '仅基于已录入药品说明书回答' : '发送药品名称后开始检索'}
+                  {workspace.hasActiveSession ? '仅基于已录入药品说明书回答' : '发送药品名称后开始检索'}
                 </Typography.Text>
               </Space>
             </div>

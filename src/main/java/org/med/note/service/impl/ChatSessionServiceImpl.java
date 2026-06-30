@@ -8,6 +8,7 @@ import org.med.note.dao.ChatTurnAuditMapper;
 import org.med.note.domain.entity.ChatSession;
 import org.med.note.domain.entity.ChatTurnAudit;
 import org.med.note.dto.ChatSessionSummaryResponse;
+import org.med.note.dto.ChatSessionTitleResponse;
 import org.med.note.dto.ChatTurnRecordResponse;
 import org.med.note.dto.ChatTurnStatusResponse;
 import org.med.note.dto.SubmitChatTurnRequest;
@@ -84,6 +85,11 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     }
 
     @Override
+    public ChatSessionTitleResponse getSessionTitle(String sessionId) {
+        return ChatSessionTitleResponse.of(ensureSessionExists(sessionId));
+    }
+
+    @Override
     public List<ChatTurnRecordResponse> listSessionTurns(String sessionId) {
         ensureSessionExists(sessionId);
         return chatTurnAuditMapper.selectList(new LambdaQueryWrapper<ChatTurnAudit>()
@@ -101,15 +107,9 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "会话轮次不存在");
         }
 
-        ChatSession session = chatSessionMapper.selectById(turnAudit.getSessionId());
-        if (session == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "会话不存在");
-        }
-
         ChatTurnStatusResponse response = new ChatTurnStatusResponse();
         response.setTurnId(turnAudit.getId());
         response.setSessionId(turnAudit.getSessionId());
-        response.setTitle(session.getTitle());
         response.setStatus(turnAudit.getStatus());
         response.setUserInput(turnAudit.getUserInput());
         response.setAssistantOutput(turnAudit.getAssistantOutput());

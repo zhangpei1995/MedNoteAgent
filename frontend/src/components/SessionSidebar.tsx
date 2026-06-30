@@ -9,6 +9,7 @@ import {
 import type { ChatSessionSummary } from '../types/chat';
 
 const { Search } = Input;
+const DEFAULT_SESSION_TITLE = '新问题';
 
 interface SessionSidebarProps {
   sessions: ChatSessionSummary[];
@@ -76,6 +77,7 @@ export function SessionSidebar({
                 <div className="session-history-group-label">{group.label}</div>
                 {group.sessions.map((session) => {
                   const consultationType = inferConsultationType(buildSessionClassificationText(session));
+                  const sessionTitle = session.title ?? DEFAULT_SESSION_TITLE;
 
                   return (
                     <button
@@ -87,16 +89,20 @@ export function SessionSidebar({
                       <span className="session-item-main">
                         <span className="session-copy">
                           <span className="session-meta-row">
-                            <Tag className={`consultation-type-tag tone-${consultationType.tone}`} size="small">
+                            <Tag
+                              className={`consultation-type-tag tone-${consultationType.tone}`}
+                              size="small"
+                              bordered={false}
+                            >
                               {consultationType.label}
                             </Tag>
                             <Typography.Text className="session-time" type="secondary">
                               {formatSessionHistoryTime(session)}
                             </Typography.Text>
                           </span>
-                          <Tooltip content={session.title || '未命名检索'}>
-                            <Typography.Text className="session-title" ellipsis title={session.title || '未命名检索'}>
-                              {session.title || '未命名检索'}
+                          <Tooltip content={sessionTitle}>
+                            <Typography.Text className="session-title" ellipsis title={sessionTitle}>
+                              {sessionTitle}
                             </Typography.Text>
                           </Tooltip>
                         </span>

@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type {
   ChatSessionSummary,
+  ChatSessionTitleResponse,
   ChatTurnRecord,
   ChatTurnStatusResponse,
   SubmitChatTurnRequest,
@@ -22,6 +23,11 @@ export const chatApi = {
 
   async listSessionTurns(sessionId: string): Promise<ChatTurnRecord[]> {
     const response = await http.get<ChatTurnRecord[]>(`/chat/sessions/${sessionId}/turns`);
+    return response.data;
+  },
+
+  async getSessionTitle(sessionId: string): Promise<ChatSessionTitleResponse> {
+    const response = await http.get<ChatSessionTitleResponse>(`/chat/sessions/${sessionId}/title`);
     return response.data;
   },
 

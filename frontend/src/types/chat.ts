@@ -1,9 +1,12 @@
 export type ChatTurnStatus = 'WAITING_AGENT' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | string;
+export type ChatSessionTitleStatus = 'GENERATING' | 'GENERATED' | 'FAILED' | string;
 
 export interface ChatSessionSummary {
   sessionId: string;
   userId?: string | null;
-  title: string;
+  title?: string | null;
+  titleStatus: ChatSessionTitleStatus;
+  titleGeneratedAt?: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -24,14 +27,20 @@ export interface ChatTurnRecord {
 export interface SubmitChatTurnRequest {
   sessionId?: string;
   userId?: string;
-  title?: string;
   userInput: string;
 }
 
 export interface SubmitChatTurnResponse {
   sessionId: string;
+  userId?: string | null;
   turnId: string;
-  title: string;
+  title?: string | null;
+  titleStatus: ChatSessionTitleStatus;
+  titleGeneratedAt?: string | null;
+  status: string;
+  sessionCreatedAt: string;
+  sessionUpdatedAt: string;
+  endedAt?: string | null;
   turnStatus: ChatTurnStatus;
   createdAt: string;
 }
@@ -39,11 +48,17 @@ export interface SubmitChatTurnResponse {
 export interface ChatTurnStatusResponse {
   turnId: string;
   sessionId: string;
-  title: string;
   status: ChatTurnStatus;
   userInput: string;
   assistantOutput?: string | null;
   errorMessage?: string | null;
   createdAt: string;
   completedAt?: string | null;
+}
+
+export interface ChatSessionTitleResponse {
+  sessionId: string;
+  title?: string | null;
+  titleStatus: ChatSessionTitleStatus;
+  titleGeneratedAt?: string | null;
 }

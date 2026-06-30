@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Message } from '@arco-design/web-react';
 import { chatApi } from '../api/chatApi';
+import { useSessionTitleSync } from './useSessionTitleSync';
 import type {
   ChatSessionSummary,
   ChatTurnRecord,
   ChatTurnStatus,
   ChatTurnStatusResponse,
+  SubmitChatTurnResponse,
 } from '../types/chat';
 
 const SELECTED_SESSION_STORAGE_KEY = 'med-note-agent:selected-session-id';
+const LOCAL_USER_ID = 'local-user';
 const TERMINAL_STATUSES = new Set<ChatTurnStatus>(['SUCCESS', 'FAILED']);
 const POLL_INTERVAL_MS = 1400;
 const MAX_POLL_ATTEMPTS = 90;
@@ -40,6 +43,28 @@ function mergeTurn(turns: ChatTurnRecord[], nextTurn: ChatTurnRecord): ChatTurnR
   return turns.map((turn, index) => (index === existingIndex ? nextTurn : turn));
 }
 
+function upsertSubmittedSession(
+  sessions: ChatSessionSummary[],
+  response: SubmitChatTurnResponse,
+): ChatSessionSummary[] {
+  const submittedSession: ChatSessionSummary = {
+    sessionId: response.sessionId,
+    userId: response.userId,
+    title: response.title,
+    titleStatus: response.titleStatus,
+    titleGeneratedAt: response.titleGeneratedAt,
+    status: response.status,
+    createdAt: response.sessionCreatedAt,
+    updatedAt: response.sessionUpdatedAt,
+    endedAt: response.endedAt,
+  };
+
+  return [
+    submittedSession,
+    ...sessions.filter((session) => session.sessionId !== response.sessionId),
+  ];
+}
+
 function readStoredSessionId(): string | undefined {
   return localStorage.getItem(SELECTED_SESSION_STORAGE_KEY) ?? undefined;
 }
@@ -60,6 +85,19 @@ export function useChatWorkspace() {
     () => sessions.find((session) => session.sessionId === selectedSessionId),
     [selectedSessionId, sessions],
   );
+  const selectedSessionTitle = useMemo(() => {
+    if (selectedSession?.title) {
+      return selectedSession.title;
+    }
+
+    return turns.find((turn) => turn.sessionId === selectedSessionId)?.userInput;
+  }, [selectedSession, selectedSessionId, turns]);
+  const hasActiveSession = Boolean(selectedSessionId);
+
+  const { syncSessionTitle } = useSessionTitleSync({
+    sessions,
+    setSessions,
+  });
 
   const refreshSessions = useCallback(async (keyword = sessionKeyword) => {
     setSessionLoading(true);
@@ -144,10 +182,11 @@ export function useChatWorkspace() {
         const activeSessionId = selectedSessionIdRef.current;
         const response = await chatApi.submitTurn({
           sessionId: activeSessionId,
-          userId: 'local-user',
+          userId: LOCAL_USER_ID,
           userInput: trimmedInput,
         });
 
+        setSessions((currentSessions) => upsertSubmittedSession(currentSessions, response));
         selectedSessionIdRef.current = response.sessionId;
         setSelectedSessionId(response.sessionId);
         setTurns((currentTurns) =>
@@ -163,6 +202,9 @@ export function useChatWorkspace() {
           }),
         );
         await refreshSessions();
+        if (!activeSessionId && response.titleStatus === 'GENERATING') {
+          syncSessionTitle(response.sessionId);
+        }
         void pollTurnStatus(response.turnId);
       } catch (error) {
         Message.error('消息发送失败，请确认后端服务可用');
@@ -170,7 +212,7 @@ export function useChatWorkspace() {
         setSending(false);
       }
     },
-    [pollTurnStatus, refreshSessions, sending],
+    [pollTurnStatus, refreshSessions, sending, syncSessionTitle],
   );
 
   useEffect(() => {
@@ -182,16 +224,6 @@ export function useChatWorkspace() {
       window.clearTimeout(timer);
     };
   }, [refreshSessions, sessionKeyword]);
-
-  useEffect(() => {
-    if (selectedSessionId && sessions.length > 0 && !sessionKeyword.trim()) {
-      const currentStillExists = sessions.some((session) => session.sessionId === selectedSessionId);
-      if (!currentStillExists) {
-        selectedSessionIdRef.current = undefined;
-        setSelectedSessionId(undefined);
-      }
-    }
-  }, [selectedSessionId, sessionKeyword, sessions]);
 
   useEffect(() => {
     selectedSessionIdRef.current = selectedSessionId;
@@ -214,6 +246,8 @@ export function useChatWorkspace() {
   return {
     sessions,
     selectedSession,
+    selectedSessionTitle,
+    hasActiveSession,
     selectedSessionId,
     turns,
     sessionLoading,

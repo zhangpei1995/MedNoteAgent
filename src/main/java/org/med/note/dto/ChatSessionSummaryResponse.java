@@ -25,9 +25,19 @@ public class ChatSessionSummaryResponse {
     private String userId;
 
     /**
-     * 会话展示标题。
+     * 会话真实展示标题；为空时前端展示默认标题。
      */
     private String title;
+
+    /**
+     * 标题生成状态，例如 GENERATING、GENERATED、FAILED。
+     */
+    private String titleStatus;
+
+    /**
+     * 标题生成完成时间；生成中或失败时为空。
+     */
+    private LocalDateTime titleGeneratedAt;
 
     /**
      * 会话状态，例如 ACTIVE、ENDED、ERROR。
@@ -60,6 +70,8 @@ public class ChatSessionSummaryResponse {
         response.setSessionId(session.getId());
         response.setUserId(session.getUserId());
         response.setTitle(session.getTitle());
+        response.setTitleStatus(session.getTitleStatus());
+        response.setTitleGeneratedAt(session.getTitleGeneratedAt());
         response.setStatus(session.getStatus());
         response.setCreatedAt(session.getCreatedAt());
         response.setUpdatedAt(session.getUpdatedAt());

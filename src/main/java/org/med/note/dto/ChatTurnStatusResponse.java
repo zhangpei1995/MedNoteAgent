@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 /**
  * 查询单轮对话执行情况的返回结果。
  *
- * <p>用于提交后根据 turnId 展示当前轮次状态；Agent 接入后会逐步填充助手输出、
- * 错误信息和完成时间。</p>
+ * <p>用于提交后根据 turnId 展示当前轮次状态；Agent 会逐步填充助手输出、
+ * 错误信息和完成时间。会话标题由独立标题接口查询。</p>
  */
 @Data
 public class ChatTurnStatusResponse {
@@ -22,11 +22,6 @@ public class ChatTurnStatusResponse {
      * 本轮所属会话 ID。
      */
     private String sessionId;
-
-    /**
-     * 会话展示标题，用于状态查询页和会话列表。
-     */
-    private String title;
 
     /**
      * 本轮执行状态，例如 WAITING_AGENT、PROCESSING、SUCCESS、FAILED。

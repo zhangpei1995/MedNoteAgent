@@ -4,6 +4,8 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import org.med.note.agent.client.ChatAgentClient;
 import org.med.note.agent.lifecycle.ChatTurnLifecycleManager;
+import org.med.note.agent.title.SessionTitleGenerationClient;
+import org.med.note.agent.title.SessionTitleLifecycleManager;
 import org.med.note.dao.ChatSessionMapper;
 import org.med.note.domain.entity.ChatSession;
 import org.med.note.domain.entity.ChatTurnAudit;
@@ -31,15 +33,18 @@ public class ChatTurnSubmissionRuntime {
     private final ChatSessionMapper chatSessionMapper;
     private final ChatTurnLifecycleManager chatTurnLifecycleManager;
     private final ChatAgentClient chatAgentClient;
+    private final SessionTitleGenerationClient sessionTitleGenerationClient;
 
     public ChatTurnSubmissionRuntime(
             ChatSessionMapper chatSessionMapper,
             ChatTurnLifecycleManager chatTurnLifecycleManager,
-            ChatAgentClient chatAgentClient
+            ChatAgentClient chatAgentClient,
+            SessionTitleGenerationClient sessionTitleGenerationClient
     ) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatTurnLifecycleManager = chatTurnLifecycleManager;
         this.chatAgentClient = chatAgentClient;
+        this.sessionTitleGenerationClient = sessionTitleGenerationClient;
     }
 
     /**
@@ -51,6 +56,7 @@ public class ChatTurnSubmissionRuntime {
     @Transactional
     public ChatTurnSubmission submit(SubmitChatTurnRequest request) {
         LocalDateTime now = LocalDateTime.now();
+        boolean createSession = StrUtil.isBlank(request.getSessionId());
         ChatSession session = resolveSession(request, now);
         ChatTurnAudit turnAudit = chatTurnLifecycleManager.createWaitingTurn(
                 session.getId(),
@@ -58,6 +64,9 @@ public class ChatTurnSubmissionRuntime {
                 now
         );
         executeAgentAfterCommit(turnAudit.getId());
+        if (createSession) {
+            generateTitleAfterCommit(session.getId(), turnAudit.getId());
+        }
 
         ChatTurnSubmission submission = new ChatTurnSubmission();
         submission.setSession(session);
@@ -79,12 +88,27 @@ public class ChatTurnSubmissionRuntime {
         });
     }
 
+    private void generateTitleAfterCommit(String sessionId, String sourceTurnId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            sessionTitleGenerationClient.generateAsync(sessionId, sourceTurnId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                sessionTitleGenerationClient.generateAsync(sessionId, sourceTurnId);
+            }
+        });
+    }
+
     private ChatSession resolveSession(SubmitChatTurnRequest request, LocalDateTime now) {
         if (StrUtil.isBlank(request.getSessionId())) {
             ChatSession session = new ChatSession();
             session.setId(IdUtil.fastSimpleUUID());
             session.setUserId(StrUtil.blankToDefault(request.getUserId(), null));
-            session.setTitle(resolveTitle(request));
+            session.setTitle(null);
+            session.setTitleStatus(SessionTitleLifecycleManager.TITLE_STATUS_GENERATING);
             session.setStatus(SESSION_STATUS_ACTIVE);
             session.setCreatedAt(now);
             session.setUpdatedAt(now);
@@ -99,12 +123,5 @@ public class ChatTurnSubmissionRuntime {
         session.setUpdatedAt(now);
         chatSessionMapper.updateById(session);
         return session;
-    }
-
-    private String resolveTitle(SubmitChatTurnRequest request) {
-        if (StrUtil.isNotBlank(request.getTitle())) {
-            return request.getTitle();
-        }
-        return StrUtil.maxLength(request.getUserInput(), 30);
     }
 }

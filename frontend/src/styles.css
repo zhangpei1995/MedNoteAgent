@@ -149,7 +149,7 @@ input {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   overflow: auto;
 }
 
@@ -170,10 +170,10 @@ input {
   display: flex;
   align-items: stretch;
   width: 100%;
-  min-height: 68px;
-  padding: 10px 11px;
+  min-height: 76px;
+  padding: 11px 12px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -186,13 +186,16 @@ input {
 
 .session-item:hover {
   border-color: #e3e7ee;
-  background: #f6f8fb;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(31, 35, 40, 0.05);
 }
 
 .session-item.active {
-  border-color: #d8e5f8;
+  border-color: #b7d3ff;
   background: #ffffff;
-  box-shadow: 0 2px 7px rgba(31, 75, 135, 0.08);
+  box-shadow:
+    0 8px 24px rgba(37, 99, 235, 0.1),
+    inset 3px 0 0 #2d6cdf;
 }
 
 .session-item-main {
@@ -209,7 +212,7 @@ input {
   min-width: 0;
   flex-direction: column;
   justify-content: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .session-meta-row {
@@ -217,7 +220,7 @@ input {
   align-items: center;
   justify-content: space-between;
   min-width: 0;
-  gap: 10px;
+  gap: 8px;
 }
 
 .session-title {
@@ -236,6 +239,7 @@ input {
 }
 
 .session-time {
+  flex: 0 0 auto;
   color: #8a8d94;
   font-size: 12px;
   line-height: 18px;
@@ -243,41 +247,50 @@ input {
 }
 
 .consultation-type-tag {
-  flex: 0 0 auto;
+  display: inline-flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 128px;
   height: 22px;
-  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
   line-height: 20px;
 }
 
+.consultation-type-tag .arco-tag-content {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .consultation-type-tag.tone-blue {
-  border-color: #d7e7ff;
-  background: #f2f7ff;
+  border-color: transparent;
+  background: #eef4ff;
   color: #2563a8;
 }
 
 .consultation-type-tag.tone-green {
-  border-color: #d3eadc;
-  background: #f0faf4;
+  border-color: transparent;
+  background: #edf9f1;
   color: #2f6b4a;
 }
 
 .consultation-type-tag.tone-orange {
-  border-color: #f6dfb5;
-  background: #fff8eb;
+  border-color: transparent;
+  background: #fff4df;
   color: #956017;
 }
 
 .consultation-type-tag.tone-purple {
-  border-color: #e3d7fb;
-  background: #f7f3ff;
+  border-color: transparent;
+  background: #f5f0ff;
   color: #6845a7;
 }
 
 .consultation-type-tag.tone-gray {
-  border-color: #dfe4eb;
+  border-color: transparent;
   background: #f6f8fa;
   color: #5f6875;
 }

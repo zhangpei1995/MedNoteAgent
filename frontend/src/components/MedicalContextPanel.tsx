@@ -27,8 +27,16 @@ export function MedicalContextPanel({ session, turns, pollingTurnId }: MedicalCo
     || session?.knowledgeStatus === 'NOT_INCLUDED';
   const targetFeatures = [session?.recognizedDrugName].filter(Boolean) as string[];
   const instructionFocusItems = [session?.instructionItem].filter(Boolean) as string[];
-  const understandingText = session?.understandingText
-    || '等待首次检索。发送药品名称或说明书条目后，这里会展示系统对检索对象的理解。';
+  const understandingText = hasBoundarySignal && targetFeatures.length === 0
+    ? '未识别到已收录药品，请核对药品全名。'
+    : session?.understandingText
+      || '等待首次检索。发送药品名称或说明书条目后展示检索理解。';
+  const boundaryText = hasBoundarySignal
+    ? '未知或未收录，仅说明边界'
+    : '按已录入说明书作答';
+  const sourceText = evidenceCount > 0
+    ? `${evidenceCount} 条说明书依据`
+    : '暂无明确依据线索';
 
   return (
     <aside className="medical-context-panel" aria-label="药品说明书检索上下文">
@@ -45,7 +53,7 @@ export function MedicalContextPanel({ session, turns, pollingTurnId }: MedicalCo
             </Tag>
           </div>
           <strong>{understandingText}</strong>
-          <p>如果识别不准确，请在下一条消息直接补充药品全名或要查询的说明书条目。</p>
+          <p>识别不准时，直接补充药品全名或说明书条目。</p>
         </div>
         <div className="target-feature-card">
           <span>已识别检索对象</span>
@@ -88,25 +96,18 @@ export function MedicalContextPanel({ session, turns, pollingTurnId }: MedicalCo
         </div>
         <div className={hasBoundarySignal ? 'context-alert warning' : 'context-alert'}>
           {hasBoundarySignal ? <IconExclamationCircle /> : <IconCheckCircle />}
-          <span>
-            {hasBoundarySignal
-              ? '已检测到未知药品或说明未录入线索，回答应明确说明收录边界，不补充医学判断。'
-              : '当前仅按已录入药品说明书检索，不进行诊断、治疗或个体化用药判断。'}
-          </span>
+          <span>{boundaryText}</span>
         </div>
-        <div className="context-source-empty">
-          <IconBook />
-          <span>
-            {evidenceCount > 0
-              ? `本会话已检测到 ${evidenceCount} 条说明书来源或依据线索，可回到回答正文核对。`
-              : '暂无明确说明书依据线索；未命中已录入资料时应回答未知药品或药品说明未录入。'}
-          </span>
+        <div className="context-status-list">
+          <div>
+            <IconBook />
+            <span>{sourceText}</span>
+          </div>
+          <div>
+            <IconInfoCircle />
+            <span>只做说明书事实检索，不替代诊疗建议</span>
+          </div>
         </div>
-      </section>
-
-      <section className="context-section context-note">
-        <IconInfoCircle />
-        <span>当前阶段只做药品说明书事实检索，不判断疾病、不给治疗方案，也不替代医生或药师的个体化用药建议。</span>
       </section>
     </aside>
   );

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Message } from '@arco-design/web-react';
 import { chatApi } from '../api/chatApi';
-import { useSessionTitleSync } from './useSessionTitleSync';
+import { useSessionMetadataSync } from './useSessionMetadataSync';
 import type {
   ChatSessionSummary,
   ChatTurnRecord,
@@ -51,8 +51,8 @@ function upsertSubmittedSession(
     sessionId: response.sessionId,
     userId: response.userId,
     title: response.title,
-    titleStatus: response.titleStatus,
-    titleGeneratedAt: response.titleGeneratedAt,
+    metadataStatus: response.metadataStatus,
+    metadataGeneratedAt: response.metadataGeneratedAt,
     status: response.status,
     createdAt: response.sessionCreatedAt,
     updatedAt: response.sessionUpdatedAt,
@@ -94,7 +94,7 @@ export function useChatWorkspace() {
   }, [selectedSession, selectedSessionId, turns]);
   const hasActiveSession = Boolean(selectedSessionId);
 
-  const { syncSessionTitle } = useSessionTitleSync({
+  const { syncSessionMetadata } = useSessionMetadataSync({
     sessions,
     setSessions,
   });
@@ -202,8 +202,8 @@ export function useChatWorkspace() {
           }),
         );
         await refreshSessions();
-        if (!activeSessionId && response.titleStatus === 'GENERATING') {
-          syncSessionTitle(response.sessionId);
+        if (!activeSessionId && response.metadataStatus === 'GENERATING') {
+          syncSessionMetadata(response.sessionId);
         }
         void pollTurnStatus(response.turnId);
       } catch (error) {
@@ -212,7 +212,7 @@ export function useChatWorkspace() {
         setSending(false);
       }
     },
-    [pollTurnStatus, refreshSessions, sending, syncSessionTitle],
+    [pollTurnStatus, refreshSessions, sending, syncSessionMetadata],
   );
 
   useEffect(() => {

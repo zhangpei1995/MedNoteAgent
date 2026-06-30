@@ -3,12 +3,14 @@ package org.med.note.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.med.note.agent.runtime.ChatTurnSubmissionRuntime;
+import org.med.note.dao.ChatSessionMetadataMapper;
 import org.med.note.dao.ChatSessionMapper;
 import org.med.note.dao.ChatTurnAuditMapper;
 import org.med.note.domain.entity.ChatSession;
+import org.med.note.domain.entity.ChatSessionMetadata;
 import org.med.note.domain.entity.ChatTurnAudit;
+import org.med.note.dto.ChatSessionMetadataResponse;
 import org.med.note.dto.ChatSessionSummaryResponse;
-import org.med.note.dto.ChatSessionTitleResponse;
 import org.med.note.dto.ChatTurnRecordResponse;
 import org.med.note.dto.ChatTurnStatusResponse;
 import org.med.note.dto.SubmitChatTurnRequest;
@@ -18,9 +20,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 基于 SQLite 和 MyBatis Plus 的会话服务实现。
@@ -32,15 +38,18 @@ import java.util.Set;
 public class ChatSessionServiceImpl implements ChatSessionService {
 
     private final ChatSessionMapper chatSessionMapper;
+    private final ChatSessionMetadataMapper metadataMapper;
     private final ChatTurnAuditMapper chatTurnAuditMapper;
     private final ChatTurnSubmissionRuntime chatTurnSubmissionRuntime;
 
     public ChatSessionServiceImpl(
             ChatSessionMapper chatSessionMapper,
+            ChatSessionMetadataMapper metadataMapper,
             ChatTurnAuditMapper chatTurnAuditMapper,
             ChatTurnSubmissionRuntime chatTurnSubmissionRuntime
     ) {
         this.chatSessionMapper = chatSessionMapper;
+        this.metadataMapper = metadataMapper;
         this.chatTurnAuditMapper = chatTurnAuditMapper;
         this.chatTurnSubmissionRuntime = chatTurnSubmissionRuntime;
     }
@@ -58,9 +67,17 @@ public class ChatSessionServiceImpl implements ChatSessionService {
         }
 
         Set<String> matchedSessionIds = new LinkedHashSet<>();
-        chatSessionMapper.selectList(new LambdaQueryWrapper<ChatSession>()
-                        .like(ChatSession::getTitle, normalizedKeyword))
-                .forEach(session -> matchedSessionIds.add(session.getId()));
+        metadataMapper.selectList(new LambdaQueryWrapper<ChatSessionMetadata>()
+                        .like(ChatSessionMetadata::getTitle, normalizedKeyword)
+                        .or()
+                        .like(ChatSessionMetadata::getConsultationCategory, normalizedKeyword)
+                        .or()
+                        .like(ChatSessionMetadata::getRecognizedDrugName, normalizedKeyword)
+                        .or()
+                        .like(ChatSessionMetadata::getInstructionItem, normalizedKeyword)
+                        .or()
+                        .like(ChatSessionMetadata::getUnderstandingText, normalizedKeyword))
+                .forEach(metadata -> matchedSessionIds.add(metadata.getSessionId()));
         chatTurnAuditMapper.selectList(new LambdaQueryWrapper<ChatTurnAudit>()
                         .like(ChatTurnAudit::getUserInput, normalizedKeyword)
                         .or()
@@ -76,17 +93,22 @@ public class ChatSessionServiceImpl implements ChatSessionService {
     }
 
     private List<ChatSessionSummaryResponse> listSessionSummaries(LambdaQueryWrapper<ChatSession> wrapper) {
-        return chatSessionMapper.selectList(wrapper
+        List<ChatSession> sessions = chatSessionMapper.selectList(wrapper
                         .orderByDesc(ChatSession::getUpdatedAt)
-                        .orderByDesc(ChatSession::getCreatedAt))
-                .stream()
-                .map(ChatSessionSummaryResponse::of)
+                        .orderByDesc(ChatSession::getCreatedAt));
+        Map<String, ChatSessionMetadata> metadataMap = loadMetadataMap(sessions);
+        return sessions.stream()
+                .map(session -> ChatSessionSummaryResponse.of(session, metadataMap.get(session.getId())))
                 .toList();
     }
 
     @Override
-    public ChatSessionTitleResponse getSessionTitle(String sessionId) {
-        return ChatSessionTitleResponse.of(ensureSessionExists(sessionId));
+    public ChatSessionMetadataResponse getSessionMetadata(String sessionId) {
+        ensureSessionExists(sessionId);
+        ChatSessionMetadata metadata = metadataMapper.selectOne(new LambdaQueryWrapper<ChatSessionMetadata>()
+                .eq(ChatSessionMetadata::getSessionId, sessionId)
+                .last("LIMIT 1"));
+        return ChatSessionMetadataResponse.of(sessionId, metadata);
     }
 
     @Override
@@ -125,5 +147,19 @@ public class ChatSessionServiceImpl implements ChatSessionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "会话不存在");
         }
         return session;
+    }
+
+    private Map<String, ChatSessionMetadata> loadMetadataMap(List<ChatSession> sessions) {
+        if (sessions.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<String> sessionIds = sessions.stream()
+                .map(ChatSession::getId)
+                .toList();
+        return metadataMapper.selectList(new LambdaQueryWrapper<ChatSessionMetadata>()
+                        .in(ChatSessionMetadata::getSessionId, sessionIds))
+                .stream()
+                .collect(Collectors.toMap(ChatSessionMetadata::getSessionId, Function.identity(), (left, right) -> left));
     }
 }

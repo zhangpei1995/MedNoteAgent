@@ -1,10 +1,9 @@
 import { Button, Empty, Input, Spin, Tag, Tooltip, Typography } from '@arco-design/web-react';
 import { IconHistory, IconPlus, IconRefresh } from '@arco-design/web-react/icon';
 import {
-  buildSessionClassificationText,
   formatSessionHistoryTime,
+  getSessionConsultationType,
   groupSessionsByRecency,
-  inferConsultationType,
 } from '../domain/sessionDisplay';
 import type { ChatSessionSummary } from '../types/chat';
 
@@ -76,7 +75,7 @@ export function SessionSidebar({
               <section className="session-history-group" key={group.label}>
                 <div className="session-history-group-label">{group.label}</div>
                 {group.sessions.map((session) => {
-                  const consultationType = inferConsultationType(buildSessionClassificationText(session));
+                  const consultationType = getSessionConsultationType(session);
                   const sessionTitle = session.title ?? DEFAULT_SESSION_TITLE;
 
                   return (

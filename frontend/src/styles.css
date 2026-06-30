@@ -731,17 +731,17 @@ input {
   max-height: 100vh;
   min-width: 0;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   overflow: auto;
-  padding: 18px 16px 20px;
+  padding: 18px 16px 22px;
   background: #ffffff;
 }
 
 .context-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-bottom: 17px;
+  gap: 10px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #eceef1;
 }
 
@@ -787,8 +787,8 @@ input {
 .target-feature-card {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 11px;
+  gap: 8px;
+  padding: 11px 12px;
   border: 1px solid #e6e9ee;
   border-radius: 10px;
   background: #f8fafc;
@@ -811,7 +811,7 @@ input {
   color: #252a31;
   font-size: 13px;
   font-weight: 650;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .context-understanding-card p {
@@ -830,8 +830,8 @@ input {
 .safety-focus-card {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 11px;
+  gap: 8px;
+  padding: 11px 12px;
   border: 1px solid #e8ebf0;
   border-radius: 8px;
   background: #ffffff;
@@ -849,25 +849,33 @@ input {
 }
 
 .context-alert,
-.context-source-empty,
-.context-note {
+.context-status-list > div {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   color: #6b7280;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .context-alert .arco-icon,
-.context-source-empty .arco-icon,
-.context-note .arco-icon {
+.context-status-list .arco-icon {
   flex: 0 0 auto;
-  margin-top: 2px;
   color: #7a7f88;
 }
 
+.context-alert {
+  min-height: 32px;
+  padding: 7px 9px;
+  border: 1px solid #dde5f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  font-weight: 600;
+}
+
 .context-alert.warning {
+  border-color: #fed7aa;
+  background: #fff7ed;
   color: #92400e;
 }
 
@@ -875,9 +883,18 @@ input {
   color: #d97706;
 }
 
-.context-note {
-  padding-bottom: 0;
-  color: #777b82;
+.context-status-list {
+  display: grid;
+  gap: 7px;
+  padding: 2px 1px 0;
+}
+
+.context-status-list > div {
+  min-width: 0;
+}
+
+.context-status-list span {
+  min-width: 0;
 }
 
 @media (max-width: 1120px) {

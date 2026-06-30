@@ -1,9 +1,9 @@
 package org.med.note.service.spi;
 
-import org.med.note.dto.ChatTurnStatusResponse;
+import org.med.note.dto.ChatSessionMetadataResponse;
 import org.med.note.dto.ChatSessionSummaryResponse;
-import org.med.note.dto.ChatSessionTitleResponse;
 import org.med.note.dto.ChatTurnRecordResponse;
+import org.med.note.dto.ChatTurnStatusResponse;
 import org.med.note.dto.SubmitChatTurnRequest;
 import org.med.note.dto.SubmitChatTurnResponse;
 
@@ -21,25 +21,25 @@ public interface ChatSessionService {
      * 提交一轮用户输入并生成待执行审计记录。
      *
      * @param request 用户输入和可选会话参数；sessionId 为空时创建会话，不为空时追加到已有会话
-     * @return 会话 ID、轮次 ID、标题状态和当前轮次初始状态
+     * @return 会话 ID、轮次 ID、元数据状态和当前轮次初始状态
      */
     SubmitChatTurnResponse submitTurn(SubmitChatTurnRequest request);
 
     /**
      * 查询会话列表，按最近更新时间倒序返回。
      *
-     * @param keyword 可选搜索关键字；为空时返回全部会话，不为空时匹配会话标题、用户输入和助手输出
+     * @param keyword 可选搜索关键字；为空时返回全部会话，不为空时匹配会话元数据、用户输入和助手输出
      * @return 会话摘要列表；没有会话或没有匹配结果时返回空列表
      */
     List<ChatSessionSummaryResponse> listSessions(String keyword);
 
     /**
-     * 查询指定会话的标题生成状态。
+     * 查询指定会话的元数据生成状态。
      *
      * @param sessionId 会话 ID，必须对应已存在的会话
-     * @return 会话真实标题和标题生成状态；标题未生成时 title 为空
+     * @return 会话元数据生成状态和结构化结果
      */
-    ChatSessionTitleResponse getSessionTitle(String sessionId);
+    ChatSessionMetadataResponse getSessionMetadata(String sessionId);
 
     /**
      * 查询指定会话下的全部轮次，按创建时间正序返回。

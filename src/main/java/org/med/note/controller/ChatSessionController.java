@@ -1,8 +1,8 @@
 package org.med.note.controller;
 
 import jakarta.validation.Valid;
+import org.med.note.dto.ChatSessionMetadataResponse;
 import org.med.note.dto.ChatSessionSummaryResponse;
-import org.med.note.dto.ChatSessionTitleResponse;
 import org.med.note.dto.ChatTurnRecordResponse;
 import org.med.note.dto.ChatTurnStatusResponse;
 import org.med.note.dto.SubmitChatTurnRequest;
@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * 会话提交、会话历史与轮次状态查询入口。
  *
- * <p>Controller 只暴露会话、标题和轮次查询入口；提交后的 Agent 执行与标题生成由后端异步链路处理。</p>
+ * <p>Controller 只暴露会话、元数据和轮次查询入口；提交后的 Agent 执行与元数据生成由后端异步链路处理。</p>
  */
 @Validated
 @RestController
@@ -42,7 +42,7 @@ public class ChatSessionController {
      * 当前返回的 turnId 用于后续查询 Agent 执行状态。</p>
      *
      * @param request 会话提交参数，userInput 必填，sessionId/userId 可选
-     * @return 新建或复用后的 sessionId、当前轮次 turnId、标题状态和初始轮次状态
+     * @return 新建或复用后的 sessionId、当前轮次 turnId、元数据状态和初始轮次状态
      */
     @PostMapping("/sessions")
     public SubmitChatTurnResponse submitTurn(@Valid @RequestBody SubmitChatTurnRequest request) {
@@ -53,7 +53,7 @@ public class ChatSessionController {
      * 查询会话摘要。
      *
      * <p>返回结果按最近更新时间倒序排列，用于前端左侧会话列表。keyword 为空时查询全部会话；
-     * keyword 不为空时按会话标题、用户输入和助手输出搜索历史对话。</p>
+     * keyword 不为空时按会话元数据、用户输入和助手输出搜索历史对话。</p>
      *
      * @param keyword 可选搜索关键字；为空时返回全部会话
      * @return 会话摘要列表；没有会话或没有匹配结果时返回空列表
@@ -64,17 +64,16 @@ public class ChatSessionController {
     }
 
     /**
-     * 查询指定会话的标题生成状态。
+     * 查询指定会话的元数据生成状态。
      *
-     * <p>标题生成独立于单轮 Agent 执行；title 为空时前端展示默认标题，
-     * titleStatus 为 GENERATED 或 FAILED 时可停止标题状态轮询。</p>
+     * <p>元数据生成独立于单轮 Agent 执行；metadataStatus 为 GENERATED 或 FAILED 时可停止轮询。</p>
      *
      * @param sessionId 会话 ID
-     * @return 会话标题和标题生成状态
+     * @return 会话元数据生成状态和结构化结果
      */
-    @GetMapping("/sessions/{sessionId}/title")
-    public ChatSessionTitleResponse getSessionTitle(@PathVariable String sessionId) {
-        return chatSessionService.getSessionTitle(sessionId);
+    @GetMapping("/sessions/{sessionId}/metadata")
+    public ChatSessionMetadataResponse getSessionMetadata(@PathVariable String sessionId) {
+        return chatSessionService.getSessionMetadata(sessionId);
     }
 
     /**
@@ -96,7 +95,7 @@ public class ChatSessionController {
      * <p>用于前端拿到 turnId 后轮询当前轮次状态、用户输入和后续 Agent 输出。</p>
      *
      * @param turnId 提交会话轮次时返回的轮次 ID
-     * @return 当前轮次状态和展示所需的会话标题
+     * @return 当前轮次状态、用户输入、助手输出和错误信息
      */
     @GetMapping("/turns/{turnId}")
     public ChatTurnStatusResponse getTurnStatus(@PathVariable String turnId) {
